@@ -67,8 +67,8 @@ namespace GCDTracker
             
             if (conf.WheelEnabled && !noUI && (conf.WindowMoveableGW || 
                 (enabledJobGW
-                    && (conf.ShowOutOfCombatGW || inCombat)
-                    && (!conf.ShowOnlyGCDRunningGW || gcd.SecondsSinceGCDEnd < conf.GCDTimeout)
+                    && (conf.ShowOutOfCombat || inCombat)
+                    && (!conf.ShowOnlyGCDRunning || gcd.SecondsSinceGCDEnd < conf.GCDTimeout)
                     ))) {
                 SetupWindow("GCDTracker_GCDWheel", conf.WindowMoveableGW);
                 gcd.DrawGCDWheel(this, conf);
@@ -77,8 +77,8 @@ namespace GCDTracker
 
             if (conf.BarEnabled && !noUI && (conf.BarWindowMoveable || 
                 (enabledJobGB 
-                    && (conf.BarShowOutOfCombat || inCombat)
-                    && (!conf.BarShowOnlyGCDRunning || gcd.SecondsSinceGCDEnd < conf.GCDTimeout)
+                    && (conf.ShowOutOfCombat || inCombat)
+                    && (!conf.ShowOnlyGCDRunning || gcd.SecondsSinceGCDEnd < conf.GCDTimeout)
                     ))) {
                 SetupWindow("GCDTracker_Bar", conf.BarWindowMoveable);
                 gcd.DrawGCDBar(this, conf);
@@ -163,7 +163,7 @@ namespace GCDTracker
         }
 
         public void StartClip(float ms) {
-            if (!conf.ClipAlertEnabled && !conf.BarClipAlertEnabled) return;
+            if (!conf.clipAlertEnabled && !conf.clipAlertEnabled) return;
             clipText[1] = string.Format("{0:0.0}", ms);
             clipText[2] = string.Format("{0:0.00}", ms);
             clipAnimAlpha.Restart();
@@ -208,7 +208,7 @@ namespace GCDTracker
         } 
 
         public void StartABC() {
-            if (!conf.abcAlertEnabled && !conf.BarABCAlertEnabled) return;
+            if (!conf.abcAlertEnabled && !conf.abcAlertEnabled) return;
             abcAnimAlpha.Restart();
             abcAnimPos.Restart();
         }
