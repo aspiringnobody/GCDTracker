@@ -1,4 +1,4 @@
-﻿using Dalamud.Configuration;
+﻿﻿using Dalamud.Configuration;
 using Dalamud.Interface;
 using Dalamud.Plugin;
 using GCDTracker.Data;
