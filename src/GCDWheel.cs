@@ -95,6 +95,8 @@ namespace GCDTracker {
         private string GetAbilityName(uint actionID, byte actionType) {
             var lumina = dataManager;
             switch (actionType) {
+                    //seem to need case 0 here for follow up casts for short spells (gcdTime>castTime).
+                    case 0:
                     case 1:
                     var ability = lumina.GetExcelSheet<Lumina.Excel.GeneratedSheets.Action>()?.GetRow(actionID);
                     return ability?.Name;
