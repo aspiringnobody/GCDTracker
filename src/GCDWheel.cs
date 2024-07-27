@@ -6,6 +6,7 @@ using GCDTracker.Data;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -16,6 +17,7 @@ namespace GCDTracker {
 
     public unsafe class GCDWheel {
         private readonly Configuration conf;
+        private readonly IDataManager dataManager;
         public Dictionary<float, AbilityTiming> ogcds = [];
         public float TotalGCD = 3.5f;
         private DateTime lastGCDEnd = DateTime.Now;
@@ -40,9 +42,20 @@ namespace GCDTracker {
         private bool abcOnLastGCD;
         private bool isRunning;
         private bool isHardCast;
+        private string queuedAbilityName = " ";
+        private string hardCastAbilityTime;
+        private string shortCastCachedSpellName = " ";
+        private Vector2 slideCast;
+        private Vector2 spellNamePos;
+        private Vector2 spellTimePos;
+        private Vector4 bgCache;
+        private float slidecastStart;
+        private float slidecastEnd;
+        private bool shortCastFinished = false;
 
-        public GCDWheel(Configuration conf) {
+        public GCDWheel(Configuration conf, IDataManager dataManager) {
             this.conf = conf;
+            this.dataManager = dataManager;
         }
 
         public void OnActionUse(byte ret, ActionManager* actionManager, ActionType actionType, uint actionID, ulong targetedActorID, uint param, uint useType, int pvp) {
@@ -61,16 +74,50 @@ namespace GCDTracker {
                 targetBuffer = DataStore.ClientState.LocalPlayer.TargetObjectId;
             if (addingToQueue) {
                 AddToQueue(act, isWeaponSkill);
+                //if (acceptQueuedSpellName)
+                    queuedAbilityName = GetAbilityName(actionID, DataStore.ClientState.LocalPlayer.CastActionType);
             } else {
                 if (isWeaponSkill) {
                     EndCurrentGCD(TotalGCD);
                     //Store GCD in a variable in order to cache it when it goes back to 0
                     TotalGCD = act->TotalGCD;
                     AddWeaponSkill(act);
+                    //if (acceptQueuedSpellName)
+                        queuedAbilityName = GetAbilityName(actionID, DataStore.ClientState.LocalPlayer.CastActionType);
                 } else if (!executingQueued) {
                     ogcds[act->ElapsedGCD] = new(act->AnimationLock, false);
                 }
             }
+        }
+
+        //probably should find a way to do this from DataStore so we aren't passing the world
+        //into GCDWheel
+        private string GetAbilityName(uint actionID, byte actionType) {
+            var lumina = dataManager;
+            switch (actionType) {
+                    case 1:
+                    var ability = lumina.GetExcelSheet<Lumina.Excel.GeneratedSheets.Action>()?.GetRow(actionID);
+                    return ability?.Name;
+
+                    case 2:
+                    var item = lumina.GetExcelSheet<Lumina.Excel.GeneratedSheets.Item>()?.GetRow(actionID);
+                    return item?.Name;
+
+                    case 13:
+                    var mount = lumina.GetExcelSheet<Lumina.Excel.GeneratedSheets.Mount>()?.GetRow(actionID);
+                    return CapitalizeOutput(mount?.Singular);
+                    
+                    default:
+                    return "... " + actionType.ToString();
+            }
+        }
+
+        private string CapitalizeOutput(string input) {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
+            return textInfo.ToTitleCase(input.ToLower());
         }
 
         private void AddToQueue(Data.Action* act, bool isWeaponSkill) {
@@ -105,6 +152,7 @@ namespace GCDTracker {
                 return;
             CleanFailedOGCDs();
             GCDTimeoutHelper(framework);
+            hardCastAbilityTime = (DataStore.Action->TotalCastTime - DataStore.Action->ElapsedCastTime).ToString("F1");
             if (lastActionCast && !HelperMethods.IsCasting())
                 HandleCancelCast();
             else if (DataStore.Action->ElapsedGCD < lastElapsedGCD)
@@ -256,7 +304,7 @@ namespace GCDTracker {
             float gcdTime = lastElapsedGCD;
             float barHeight = ui.w_size.Y * conf.BarHeightRatio;
             float barWidth = ui.w_size.X * conf.BarWidthRatio;
-            float borderSize = conf.BarBorderSize;
+            int borderSize = (int)conf.BarBorderSize;
             float barGCDClipTime = 0;
             Vector2 start = new(ui.w_cent.X - (barWidth / 2), ui.w_cent.Y - (barHeight / 2));
             Vector2 end = new(ui.w_cent.X + (barWidth / 2), ui.w_cent.Y + (barHeight / 2));
@@ -271,6 +319,11 @@ namespace GCDTracker {
             InvokeAlerts((conf.BarWidthRatio + 1) / 2.1f, -0.3f, ui);
             // Background
             ui.DrawBar(0f, 1f, barWidth, barHeight, BackgroundColor());
+
+            //draw slidecast if we are transitioning from castbar where GCDTime > CastTime 
+            if (shortCastFinished && conf.SlideCastEnabled && conf.CastBarEnabled && conf.SlideCastFullBar)
+                ui.DrawBar(slidecastStart, slidecastEnd, barWidth, barHeight, conf.slideCol);
+
             ui.DrawBar(0f, Math.Min(gcdTime / gcdTotal, 1f), barWidth, barHeight, conf.frontCol);
 
             foreach (var (ogcd, (anlock, iscast)) in ogcds) {
@@ -282,9 +335,9 @@ namespace GCDTracker {
                     ogcdEnd = gcdTotal;
                     barGCDClipTime += ogcdStart + anlock - gcdTotal;
                     //prevent red bar when we "clip" a hard-cast ability
-                    if (!isHardCast){
-                        // Draw the clipped part at the beggining
-                        ui.DrawBar(0, barGCDClipTime/gcdTotal, barWidth, barHeight, conf.clipCol);
+                    if (!isHardCast) {
+                        // Draw the clipped part at the beginning
+                        ui.DrawBar(0, barGCDClipTime / gcdTotal, barWidth, barHeight, conf.clipCol);
                     }
                 }
                 ui.DrawBar(ogcdStart / gcdTotal, ogcdEnd / gcdTotal, barWidth, barHeight, isClipping ? conf.clipCol : conf.anLockCol);
@@ -294,11 +347,11 @@ namespace GCDTracker {
                         ui.w_cent.Y - (barHeight / 2) + 1f
                     );
                     ui.DrawRectFilled(clipPos,
-                        clipPos + new Vector2(2f*ui.Scale, barHeight-2f),
+                        clipPos + new Vector2(2f * ui.Scale, barHeight - 2f),
                         conf.ogcdCol);
                 }
             }
-            //borders last so they're on top of all elements
+
             if (conf.QueueLockEnabled) {
                 Vector2 queueLock = new(
                     ui.w_cent.X + (0.8f * barWidth) - (barWidth / 2),
@@ -308,10 +361,114 @@ namespace GCDTracker {
                     queueLock + new Vector2(borderSize, barHeight + (borderSize / 2)),
                     conf.BarBackColBorder);
             }
+            // Borders last so they're on top of all elements
             if (borderSize > 0) {
                 ui.DrawRect(
-                    start - (new Vector2(borderSize, borderSize)/2),
-                    end + (new Vector2(borderSize, borderSize)/2),
+                    start - (new Vector2(borderSize, borderSize) / 2),
+                    end + (new Vector2(borderSize, borderSize) / 2),
+                    conf.BarBackColBorder, borderSize);
+            }
+            //Gonna re-do this, but for now, we flag when we need to carryover from the castbar to the GCDBar
+            //and dump all the crap here to draw on top. 
+            if (shortCastFinished) {
+                string abilityNameOutput = shortCastCachedSpellName;
+                if (queuedAbilityName != " ")
+                    abilityNameOutput = shortCastCachedSpellName + " -> " + queuedAbilityName;
+                ui.DrawHardCastAbilityName(abilityNameOutput, spellNamePos);
+                ui.DrawRectFilled(slideCast,
+                    slideCast + new Vector2(borderSize, barHeight + (borderSize / 2)), conf.BarBackColBorder);
+            }
+
+        }
+
+        public void DrawCastBar (PluginUI ui) {
+            float gcdTotal = DataStore.Action->TotalGCD;
+            float castTotal = DataStore.Action->TotalCastTime;
+            float castElapsed = DataStore.Action->ElapsedCastTime;
+            float barHeight = ui.w_size.Y * conf.BarHeightRatio;
+            float barWidth = ui.w_size.X * conf.BarWidthRatio;
+            int borderSize = (int)conf.BarBorderSize;
+            float castbarEnd = 1f;
+            float castbarProgress = castElapsed / castTotal;
+            float slidecastOffset = 0.5f;
+            slidecastStart = Math.Max((castTotal - slidecastOffset) / castTotal, 0f);
+            slidecastEnd = castbarEnd;
+
+            
+            Vector2 start = new(ui.w_cent.X - (barWidth / 2), ui.w_cent.Y - (barHeight / 2));
+            Vector2 end = new(ui.w_cent.X + (barWidth / 2), ui.w_cent.Y + (barHeight / 2));
+
+            //handle short casts
+            if (gcdTotal > castTotal) {
+                castbarEnd = castTotal / gcdTotal;
+                slidecastStart = Math.Max((castTotal - slidecastOffset) / gcdTotal, 0f);
+                slidecastEnd = conf.SlideCastFullBar ? 1f : castbarEnd;
+            }
+
+            //background
+            if (castbarProgress < 0.01f)
+                bgCache = BackgroundColor();
+            ui.DrawBar(0f, 1f, barWidth, barHeight, bgCache);
+            
+            //draw the slidecast bar
+            if (conf.SlideCastEnabled) {
+                ui.DrawBar(slidecastStart, slidecastEnd, barWidth, barHeight, conf.slideCol);
+            }
+
+            //draw the actual castbar
+            ui.DrawBar(0f, Math.Min(castbarProgress * castbarEnd, castbarEnd), barWidth, barHeight, conf.frontCol);
+           
+            //draw slidecast border
+            if (conf.SlideCastEnabled) {
+                slideCast = new(
+                    ui.w_cent.X + (slidecastStart * barWidth) - (barWidth / 2),
+                    ui.w_cent.Y - (barHeight / 2) - (borderSize / 2)
+                );                
+                ui.DrawRectFilled(slideCast,
+                    slideCast + new Vector2(borderSize, barHeight + (borderSize / 2)), 
+                    conf.BarBackColBorder);
+            }
+
+            //draw the queuelock
+            if (conf.QueueLockEnabled && gcdTotal > castTotal) {
+                Vector2 queueLock = new(
+                    ui.w_cent.X + (0.8f * barWidth) - (barWidth / 2),
+                    ui.w_cent.Y - (barHeight / 2) - (borderSize / 2)
+                );
+                ui.DrawRectFilled(queueLock,
+                    queueLock + new Vector2(borderSize, barHeight + (borderSize / 2)),
+                    conf.BarBackColBorder);
+            }
+
+            var abilityID = DataStore.ClientState.LocalPlayer.CastActionId;
+            var actionType = DataStore.ClientState.LocalPlayer.CastActionType;
+            if (!string.IsNullOrEmpty(GetAbilityName(abilityID, actionType))) {
+                spellNamePos = new(
+                    ui.w_cent.X - (barWidth / 2.05f),
+                    ui.w_cent.Y - (barHeight / 3)
+                );
+                spellTimePos = new(
+                    ui.w_cent.X + (barWidth / 2.05f),
+                    ui.w_cent.Y - (barHeight / 3)
+                );
+                if (castbarProgress <= 0.01f) {
+                    queuedAbilityName = " ";
+                }
+                if (castbarEnd - castbarProgress <= 0.01f && gcdTotal > castTotal) {
+                    shortCastFinished = true;
+                    shortCastCachedSpellName = GetAbilityName(abilityID, actionType);
+                }
+                string abilityNameOutput = GetAbilityName(abilityID, actionType);
+                if (queuedAbilityName != " ")
+                    abilityNameOutput = GetAbilityName(abilityID, actionType) + " -> " + queuedAbilityName;
+                ui.DrawHardCastAbilityName(abilityNameOutput, spellNamePos);
+                ui.DrawHardCastAbilityTime(hardCastAbilityTime, spellTimePos);
+            }
+
+            if (borderSize > 0) {
+                ui.DrawRect(
+                    start - (new Vector2(borderSize, borderSize) / 2),
+                    end + (new Vector2(borderSize, borderSize) / 2),
                     conf.BarBackColBorder, borderSize);
             }
         }
@@ -331,6 +488,7 @@ namespace GCDTracker {
             //I'm sure there's a better way to accomplish this
             abcOnLastGCD = abcOnThisGCD;
             abcOnThisGCD = false;
+            shortCastFinished = false;
         }
 
         public void UpdateAnlock(float oldLock, float newLock) {

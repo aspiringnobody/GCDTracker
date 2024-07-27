@@ -63,6 +63,12 @@ namespace GCDTracker
         public float BarHeightRatio = 0.5f;
         public Vector4 BarBackColBorder = new(0f, 0f, 0f, 1f);
 
+        //CastBar
+        public bool CastBarEnabled = true;
+        public bool SlideCastEnabled = true;
+        public bool SlideCastFullBar = true;
+        public Vector4 slideCol = new(0f, 0f, 0f, 0.7f);
+
         //Combo
         public bool ComboEnabled = false;
         [JsonIgnore]
@@ -380,6 +386,14 @@ namespace GCDTracker
                         ImGui.Separator();
 
                         DrawJobGrid(ref EnabledGWJobs, true);
+                    ImGui.EndTabItem();
+                }
+                if (ImGui.BeginTabItem("Castbar")) {
+                    ImGui.Checkbox("Enable Castbar Mode", ref CastBarEnabled);
+                    ImGui.Checkbox("Enable Slidecast Functionality", ref SlideCastEnabled);
+                    if (SlideCastEnabled)
+                        ImGui.Checkbox("Slidecast Covers End of Bar", ref SlideCastFullBar);
+                        ImGui.ColorEdit4("Slidecast Bar Color", ref slideCol, ImGuiColorEditFlags.NoInputs);
                     ImGui.EndTabItem();
                 }
                 if (ImGui.BeginTabItem("Combo Tracker")) {

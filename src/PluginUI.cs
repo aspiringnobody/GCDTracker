@@ -75,10 +75,17 @@ namespace GCDTracker
                 (enabledJobGB
                     && (conf.ShowOutOfCombat || inCombat)
                     && (!conf.ShowOnlyGCDRunning || (gcd.idleTimerAccum < gcd.GCDTimeoutBuffer && !gcd.lastActionTP))
+                    //hide the GCDBar if the castbar is active
+                    && (!conf.CastBarEnabled || !HelperMethods.IsCasting())
                     ))) {
                 SetupWindow("GCDTracker_Bar", conf.BarWindowMoveable);
                 gcd.DrawGCDBar(this);
                 ImGui.End();
+            }
+            
+            if (conf.CastBarEnabled && !noUI && HelperMethods.IsCasting()){
+                gcd.DrawCastBar(this);
+                //ImGui.End() -- we don't need this, right?  Since we don't need the SetupWindow?
             }
 
             if (conf.ComboEnabled && !noUI && (conf.WindowMoveableCT ||
@@ -202,6 +209,55 @@ namespace GCDTracker
             ImGui.SetWindowFontScale(1f);
             ImGui.PopFont();
         }
+
+        //these two methods need combined
+        //todo: maybe add outline to alert text
+        public void DrawHardCastAbilityName(string abilityName, Vector2 textPos) {
+            if (!string.IsNullOrEmpty(abilityName)) {
+                Vector2 textSize = ImGui.CalcTextSize(abilityName);
+                
+                uint outlineColor = ImGui.GetColorU32(new Vector4(0, 0, 0, 1)); // Black outline
+                uint textColor = ImGui.GetColorU32(new Vector4(1, 1, 1, 1)); // White Text
+                float outlineThickness = 1.0f;
+
+                draw.AddText(textPos + new Vector2(-outlineThickness, -outlineThickness), outlineColor, abilityName);
+                draw.AddText(textPos + new Vector2(outlineThickness, -outlineThickness), outlineColor, abilityName);
+                draw.AddText(textPos + new Vector2(-outlineThickness, outlineThickness), outlineColor, abilityName);
+                draw.AddText(textPos + new Vector2(outlineThickness, outlineThickness), outlineColor, abilityName);
+                draw.AddText(textPos + new Vector2(-outlineThickness, 0), outlineColor, abilityName);
+                draw.AddText(textPos + new Vector2(outlineThickness, 0), outlineColor, abilityName);
+                draw.AddText(textPos + new Vector2(0, -outlineThickness), outlineColor, abilityName);
+                draw.AddText(textPos + new Vector2(0, outlineThickness), outlineColor, abilityName);
+
+                draw.AddText(textPos, textColor, abilityName);
+            }
+        }
+
+        public void DrawHardCastAbilityTime(string abilityTime, Vector2 textPos) {
+            if (!string.IsNullOrEmpty(abilityTime)) {
+                float textWidth = ImGui.CalcTextSize(abilityTime).X; // Get only the width of the text
+                Vector2 newTextPos = new Vector2(textPos.X - textWidth, textPos.Y); // Adjust only the X position
+
+                // Define the outline color and thickness
+                uint outlineColor = ImGui.GetColorU32(new Vector4(0, 0, 0, 1)); // Black outline
+                uint textColor = ImGui.GetColorU32(new Vector4(1, 1, 1, 1)); // White Text
+                float outlineThickness = 1.0f;
+
+                // Draw the outline by drawing the text in 8 directions around the main text
+                draw.AddText(newTextPos + new Vector2(-outlineThickness, -outlineThickness), outlineColor, abilityTime);
+                draw.AddText(newTextPos + new Vector2(outlineThickness, -outlineThickness), outlineColor, abilityTime);
+                draw.AddText(newTextPos + new Vector2(-outlineThickness, outlineThickness), outlineColor, abilityTime);
+                draw.AddText(newTextPos + new Vector2(outlineThickness, outlineThickness), outlineColor, abilityTime);
+                draw.AddText(newTextPos + new Vector2(-outlineThickness, 0), outlineColor, abilityTime);
+                draw.AddText(newTextPos + new Vector2(outlineThickness, 0), outlineColor, abilityTime);
+                draw.AddText(newTextPos + new Vector2(0, -outlineThickness), outlineColor, abilityTime);
+                draw.AddText(newTextPos + new Vector2(0, outlineThickness), outlineColor, abilityTime);
+
+                // Draw the main text
+                draw.AddText(newTextPos, textColor, abilityTime);
+            }
+        }
+
 
         public void DrawDebugText(float relx, float rely, float textSize, Vector4 textCol, Vector4 backCol, string debugText) {
             ImGui.PushFont(UiBuilder.MonoFont);
