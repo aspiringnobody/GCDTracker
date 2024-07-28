@@ -408,7 +408,7 @@ namespace GCDTracker {
             }
 
             //background
-            if (castbarProgress < 0.01f)
+            if (castbarProgress < 0.25f)
                 bgCache = BackgroundColor();
             ui.DrawBar(0f, 1f, barWidth, barHeight, bgCache);
             
