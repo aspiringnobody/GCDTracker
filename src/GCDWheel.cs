@@ -74,7 +74,6 @@ namespace GCDTracker {
                 targetBuffer = DataStore.ClientState.LocalPlayer.TargetObjectId;
             if (addingToQueue) {
                 AddToQueue(act, isWeaponSkill);
-                //if (acceptQueuedSpellName)
                     queuedAbilityName = GetAbilityName(actionID, DataStore.ClientState.LocalPlayer.CastActionType);
             } else {
                 if (isWeaponSkill) {
@@ -82,7 +81,6 @@ namespace GCDTracker {
                     //Store GCD in a variable in order to cache it when it goes back to 0
                     TotalGCD = act->TotalGCD;
                     AddWeaponSkill(act);
-                    //if (acceptQueuedSpellName)
                         queuedAbilityName = GetAbilityName(actionID, DataStore.ClientState.LocalPlayer.CastActionType);
                 } else if (!executingQueued) {
                     ogcds[act->ElapsedGCD] = new(act->AnimationLock, false);
@@ -94,6 +92,18 @@ namespace GCDTracker {
         //into GCDWheel
         private string GetAbilityName(uint actionID, byte actionType) {
             var lumina = dataManager;
+
+            //so, we're not going to talk about this, and I'm going to deny ever doing it.
+            if (DataStore.ClientState.LocalPlayer.TargetObject.ObjectKind.ToString() == "Aetheryte") {
+                return "Attuning...";
+            }
+            if (DataStore.ClientState.LocalPlayer.TargetObject.ObjectKind.ToString() == "EventObj") {
+                return "Interacting...";
+            }
+            if (DataStore.ClientState.LocalPlayer.TargetObject.ObjectKind.ToString() == "EventNpc") {
+                return "Interacting...";
+            }
+
             switch (actionType) {
                     //seem to need case 0 here for follow up casts for short spells (gcdTime>castTime).
                     case 0:
@@ -110,7 +120,7 @@ namespace GCDTracker {
                     return CapitalizeOutput(mount?.Singular);
                     
                     default:
-                    return "... " + actionType.ToString();
+                    return "... " + actionID.ToString() + " " +actionType.ToString() + " " + DataStore.ClientState.LocalPlayer.TargetObject.ObjectKind.ToString();
             }
         }
 
