@@ -93,16 +93,7 @@ namespace GCDTracker {
         private string GetAbilityName(uint actionID, byte actionType) {
             var lumina = dataManager;
 
-            //so, we're not going to talk about this, and I'm going to deny ever doing it.
-            if (DataStore.ClientState.LocalPlayer.TargetObject.ObjectKind.ToString() == "Aetheryte") {
-                return "Attuning...";
-            }
-            if (DataStore.ClientState.LocalPlayer.TargetObject.ObjectKind.ToString() == "EventObj") {
-                return "Interacting...";
-            }
-            if (DataStore.ClientState.LocalPlayer.TargetObject.ObjectKind.ToString() == "EventNpc") {
-                return "Interacting...";
-            }
+
 
             switch (actionType) {
                     //seem to need case 0 here for follow up casts for short spells (gcdTime>castTime).
@@ -120,6 +111,16 @@ namespace GCDTracker {
                     return CapitalizeOutput(mount?.Singular);
                     
                     default:
+                    //so, we're not going to talk about this, and I'm going to deny ever doing it.
+                    if (DataStore.ClientState.LocalPlayer.TargetObject.ObjectKind.ToString() == "Aetheryte") {
+                        return "Attuning...";
+                    }
+                    if (DataStore.ClientState.LocalPlayer.TargetObject.ObjectKind.ToString() == "EventObj") {
+                        return "Interacting...";
+                    }
+                    if (DataStore.ClientState.LocalPlayer.TargetObject.ObjectKind.ToString() == "EventNpc") {
+                        return "Interacting...";
+                    }
                     return "... " + actionID.ToString() + " " +actionType.ToString() + " " + DataStore.ClientState.LocalPlayer.TargetObject.ObjectKind.ToString();
             }
         }
