@@ -75,17 +75,14 @@ namespace GCDTracker
                 (enabledJobGB
                     && (conf.ShowOutOfCombat || inCombat)
                     && (!conf.ShowOnlyGCDRunning || (gcd.idleTimerAccum < gcd.GCDTimeoutBuffer && !gcd.lastActionTP))
-                    //hide the GCDBar if the castbar is active
-                    && (!conf.CastBarEnabled || !HelperMethods.IsCasting())
                     ))) {
                 SetupWindow("GCDTracker_Bar", conf.BarWindowMoveable);
-                gcd.DrawGCDBar(this);
+                //hide the GCDBar if the castbar is active
+                if (!conf.CastBarEnabled || !HelperMethods.IsCasting())
+                    gcd.DrawGCDBar(this);
+                if (conf.CastBarEnabled && !noUI && HelperMethods.IsCasting())
+                    gcd.DrawCastBar(this);
                 ImGui.End();
-            }
-            
-            if (conf.CastBarEnabled && !noUI && HelperMethods.IsCasting()){
-                gcd.DrawCastBar(this);
-                //ImGui.End() -- we don't need this, right?  Since we don't need the SetupWindow?
             }
 
             if (conf.ComboEnabled && !noUI && (conf.WindowMoveableCT ||

@@ -388,13 +388,15 @@ namespace GCDTracker
                         DrawJobGrid(ref EnabledGWJobs, true);
                     ImGui.EndTabItem();
                 }
-                if (ImGui.BeginTabItem("Castbar")) {
-                    ImGui.Checkbox("Enable Castbar Mode", ref CastBarEnabled);
-                    ImGui.Checkbox("Enable Slidecast Functionality", ref SlideCastEnabled);
-                    if (SlideCastEnabled)
-                        ImGui.Checkbox("Slidecast Covers End of Bar", ref SlideCastFullBar);
-                        ImGui.ColorEdit4("Slidecast Bar Color", ref slideCol, ImGuiColorEditFlags.NoInputs);
-                    ImGui.EndTabItem();
+                if (BarEnabled){
+                    if (ImGui.BeginTabItem("Castbar")) {
+                        ImGui.Checkbox("Enable Castbar Mode", ref CastBarEnabled);
+                        ImGui.Checkbox("Enable Slidecast Functionality", ref SlideCastEnabled);
+                        if (SlideCastEnabled)
+                            ImGui.Checkbox("Slidecast Covers End of Bar", ref SlideCastFullBar);
+                            ImGui.ColorEdit4("Slidecast Bar Color", ref slideCol, ImGuiColorEditFlags.NoInputs);
+                        ImGui.EndTabItem();
+                    }
                 }
                 if (ImGui.BeginTabItem("Combo Tracker")) {
                     ImGui.Checkbox("Enable ComboTrack", ref ComboEnabled);
