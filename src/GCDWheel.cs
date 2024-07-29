@@ -486,7 +486,7 @@ namespace GCDTracker {
 
             if (conf.QueueLockEnabled && !(!isShortCast && isCastBar)) {
 
-                float queuelockStartBuffer = 0.99f;
+                float queuelockStartBuffer = 0.8f;
                 if (castBarCurrentPos >= 0.8f)
                     queuelockStartBuffer = castBarCurrentPos;
                     if (castBarCurrentPos >= 1f - ((float)borderSize / barWidth))
