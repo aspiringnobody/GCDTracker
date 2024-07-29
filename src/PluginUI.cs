@@ -130,7 +130,7 @@ namespace GCDTracker
         }
 
         public void DrawRectFilled(Vector2 start, Vector2 end, Vector4 color) {
-            draw.AddRectFilled(start, end, ImGui.GetColorU32(color), 0, ImDrawFlags.None);
+            draw.Flags &= ~ImDrawListFlags.AntiAliasedFill; // Disable anti-aliasing
         }
 
         public void DrawCircSegment(float start_rad, float end_rad, float thickness,Vector4 col) {
@@ -254,6 +254,15 @@ namespace GCDTracker
                 draw.AddText(newTextPos, textColor, abilityTime);
             }
         }
+
+public void DrawRightTriangle(Vector2 p1, Vector2 p2, Vector2 p3, Vector4 color)
+{
+    var originalFlags = draw.Flags;
+    draw.Flags &= ~ImDrawListFlags.AntiAliasedFill; // Disable anti-aliasing
+    draw.AddTriangleFilled(p1, p2, p3, ImGui.GetColorU32(color));
+    draw.Flags = originalFlags; // Restore original flags
+}
+
 
 
         public void DrawDebugText(float relx, float rely, float textSize, Vector4 textCol, Vector4 backCol, string debugText) {
