@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Animation;
 using Dalamud.Interface.Animation.EasingFunctions;
+using Dalamud.Interface.ManagedFontAtlas;
 using GCDTracker.Data;
 using ImGuiNET;
 using System;
@@ -209,67 +210,85 @@ namespace GCDTracker
 
         //these two methods need combined
         //todo: maybe add outline to alert text
-        public void DrawHardCastAbilityName(string abilityName, Vector2 textPos) {
+        public void DrawHardCastAbilityName(string abilityName, string combinedText, Vector2 textPos, float textSize) {
             if (!string.IsNullOrEmpty(abilityName)) {
-                Vector2 textSize = ImGui.CalcTextSize(abilityName);
+                ImGui.PushFont(UiBuilder.MonoFont); // probably not needed
+                ImGui.SetWindowFontScale(textSize);
                 
                 uint outlineColor = ImGui.GetColorU32(new Vector4(0, 0, 0, 1)); // Black outline
                 uint textColor = ImGui.GetColorU32(new Vector4(1, 1, 1, 1)); // White Text
                 float outlineThickness = 1.0f;
+                float calculatedYOffset = ImGui.CalcTextSize(combinedText).Y / 2;
+                Vector2 textPosCentered = new(textPos.X, textPos.Y - calculatedYOffset);
 
-                draw.AddText(textPos + new Vector2(-outlineThickness, -outlineThickness), outlineColor, abilityName);
-                draw.AddText(textPos + new Vector2(outlineThickness, -outlineThickness), outlineColor, abilityName);
-                draw.AddText(textPos + new Vector2(-outlineThickness, outlineThickness), outlineColor, abilityName);
-                draw.AddText(textPos + new Vector2(outlineThickness, outlineThickness), outlineColor, abilityName);
-                draw.AddText(textPos + new Vector2(-outlineThickness, 0), outlineColor, abilityName);
-                draw.AddText(textPos + new Vector2(outlineThickness, 0), outlineColor, abilityName);
-                draw.AddText(textPos + new Vector2(0, -outlineThickness), outlineColor, abilityName);
-                draw.AddText(textPos + new Vector2(0, outlineThickness), outlineColor, abilityName);
+                draw.AddText(textPosCentered + new Vector2(-outlineThickness, -outlineThickness), outlineColor, abilityName);
+                draw.AddText(textPosCentered + new Vector2(outlineThickness, -outlineThickness), outlineColor, abilityName);
+                draw.AddText(textPosCentered + new Vector2(-outlineThickness, outlineThickness), outlineColor, abilityName);
+                draw.AddText(textPosCentered + new Vector2(outlineThickness, outlineThickness), outlineColor, abilityName);
+                draw.AddText(textPosCentered + new Vector2(-outlineThickness, 0), outlineColor, abilityName);
+                draw.AddText(textPosCentered + new Vector2(outlineThickness, 0), outlineColor, abilityName);
+                draw.AddText(textPosCentered + new Vector2(0, -outlineThickness), outlineColor, abilityName);
+                draw.AddText(textPosCentered + new Vector2(0, outlineThickness), outlineColor, abilityName);
 
-                draw.AddText(textPos, textColor, abilityName);
+                draw.AddText(textPosCentered, textColor, abilityName);
+
+                ImGui.SetWindowFontScale(1f);
+                ImGui.PopFont();
             }
         }
 
-        public void DrawHardCastAbilityTime(string abilityTime, Vector2 textPos) {
+        public void DrawHardCastAbilityTime(string abilityTime, string combinedText, Vector2 textPos, float textSize) {
             if (!string.IsNullOrEmpty(abilityTime)) {
-                float textWidth = ImGui.CalcTextSize(abilityTime).X; // Get only the width of the text
-                Vector2 newTextPos = new Vector2(textPos.X - textWidth, textPos.Y); // Adjust only the X position
+                ImGui.PushFont(UiBuilder.MonoFont); // probably not needed
+                ImGui.SetWindowFontScale(textSize);
 
                 // Define the outline color and thickness
                 uint outlineColor = ImGui.GetColorU32(new Vector4(0, 0, 0, 1)); // Black outline
                 uint textColor = ImGui.GetColorU32(new Vector4(1, 1, 1, 1)); // White Text
                 float outlineThickness = 1.0f;
+                float calculatedXOffset = ImGui.CalcTextSize(abilityTime).X;
+                float calculatedYOffset = ImGui.CalcTextSize(combinedText).Y / 2;
+                Vector2 textPosCentered = new(textPos.X - calculatedXOffset, textPos.Y - calculatedYOffset);
 
-                // Draw the outline by drawing the text in 8 directions around the main text
-                draw.AddText(newTextPos + new Vector2(-outlineThickness, -outlineThickness), outlineColor, abilityTime);
-                draw.AddText(newTextPos + new Vector2(outlineThickness, -outlineThickness), outlineColor, abilityTime);
-                draw.AddText(newTextPos + new Vector2(-outlineThickness, outlineThickness), outlineColor, abilityTime);
-                draw.AddText(newTextPos + new Vector2(outlineThickness, outlineThickness), outlineColor, abilityTime);
-                draw.AddText(newTextPos + new Vector2(-outlineThickness, 0), outlineColor, abilityTime);
-                draw.AddText(newTextPos + new Vector2(outlineThickness, 0), outlineColor, abilityTime);
-                draw.AddText(newTextPos + new Vector2(0, -outlineThickness), outlineColor, abilityTime);
-                draw.AddText(newTextPos + new Vector2(0, outlineThickness), outlineColor, abilityTime);
+
+                // Draw the outline
+                draw.AddText(textPosCentered + new Vector2(-outlineThickness, -outlineThickness), outlineColor, abilityTime);
+                draw.AddText(textPosCentered + new Vector2(outlineThickness, -outlineThickness), outlineColor, abilityTime);
+                draw.AddText(textPosCentered + new Vector2(-outlineThickness, outlineThickness), outlineColor, abilityTime);
+                draw.AddText(textPosCentered + new Vector2(outlineThickness, outlineThickness), outlineColor, abilityTime);
+                draw.AddText(textPosCentered + new Vector2(-outlineThickness, 0), outlineColor, abilityTime);
+                draw.AddText(textPosCentered + new Vector2(outlineThickness, 0), outlineColor, abilityTime);
+                draw.AddText(textPosCentered + new Vector2(0, -outlineThickness), outlineColor, abilityTime);
+                draw.AddText(textPosCentered + new Vector2(0, outlineThickness), outlineColor, abilityTime);
 
                 // Draw the main text
-                draw.AddText(newTextPos, textColor, abilityTime);
+                draw.AddText(textPosCentered, textColor, abilityTime);
+                
+                ImGui.SetWindowFontScale(1f);
+                ImGui.PopFont();
             }
         }
 
-public void DrawRightTriangle(Vector2 p1, Vector2 p2, Vector2 p3, Vector4 color)
-{
-    var originalFlags = draw.Flags;
-    draw.Flags &= ~ImDrawListFlags.AntiAliasedFill; // Disable anti-aliasing
-    draw.AddTriangleFilled(p1, p2, p3, ImGui.GetColorU32(color));
-    draw.Flags = originalFlags; // Restore original flags
-}
+        public void DrawRightTriangle(Vector2 p1, Vector2 p2, Vector2 p3, Vector4 color) {
+            var originalFlags = draw.Flags;
+            draw.Flags &= ~ImDrawListFlags.AntiAliasedFill; // Disable anti-aliasing
+            draw.AddTriangleFilled(p1, p2, p3, ImGui.GetColorU32(color));
+            draw.Flags = originalFlags; // Restore original flags
+        }
 
-public void DrawRectFilledNoAA(Vector2 start, Vector2 end, Vector4 color) {
-    var originalFlags = draw.Flags;
-    draw.Flags &= ~ImDrawListFlags.AntiAliasedFill; // Disable anti-aliasing
-    draw.AddRectFilled(start, end, ImGui.GetColorU32(color), 0, ImDrawFlags.None);
-    draw.Flags = originalFlags; // Restore original flags
-}
+        public void DrawRectFilledNoAA(Vector2 start, Vector2 end, Vector4 color) {
+            var originalFlags = draw.Flags;
+            draw.Flags &= ~ImDrawListFlags.AntiAliasedFill; // Disable anti-aliasing
+            draw.AddRectFilled(start, end, ImGui.GetColorU32(color), 0, ImDrawFlags.None);
+            draw.Flags = originalFlags; // Restore original flags
+        }
 
+        public void DrawRectNoAA(Vector2 start, Vector2 end, Vector4 color, int thickness) {
+            var originalFlags = draw.Flags;
+            draw.Flags &= ~ImDrawListFlags.AntiAliasedFill; // Disable anti-aliasing
+            draw.AddRect(start, end, ImGui.GetColorU32(color), 0, ImDrawFlags.None, thickness);
+            draw.Flags = originalFlags; // Restore original flags
+        }
 
         public void DrawDebugText(float relx, float rely, float textSize, Vector4 textCol, Vector4 backCol, string debugText) {
             ImGui.PushFont(UiBuilder.MonoFont);
