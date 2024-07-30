@@ -436,11 +436,11 @@ namespace GCDTracker {
                     (int)(ui.w_cent.Y + halfBarHeight)
                     );
                 Vector2 slidecastStartVector_TopRight = new(
-                    (int)(ui.w_cent.X + ((slidecastStart + ((float)borderSize / barWidth)) * barWidth) - halfBarWidth),
+                    (int)(ui.w_cent.X + ((slidecastStart + ((float)(borderSize >= 1 ? borderSize : 1) / barWidth)) * barWidth) - halfBarWidth),
                     (int)(ui.w_cent.Y - ((barHeight) / 2))
                     );
                 Vector2 slidecastStartVector_BottomRight = new(
-                    (int)(ui.w_cent.X + ((slidecastStart + ((float)borderSize / barWidth)) * barWidth) - halfBarWidth),
+                    (int)(ui.w_cent.X + ((slidecastStart + ((float)(borderSize >= 1 ? borderSize : 1) / barWidth)) * barWidth) - halfBarWidth),
                     (int)(ui.w_cent.Y + halfBarHeight)
                     );
                 Vector2 slidecastEndVector = new(
@@ -460,10 +460,9 @@ namespace GCDTracker {
                 // draw slidecast bar
                 ui.DrawRectFilledNoAA(topRight_LeftVertex, slidecastEndVector, conf.slideCol);
                 // draw sidecast vertical line
+
                 ui.DrawRectFilledNoAA(topRight_LeftVertex, bottomLeft_RightVertex, conf.BarBackColBorder);
-
-
-                if(isShortCast){  
+                if(conf.ShowSlidecastTriangles &&(isShortCast || (isCastBar && conf.ShowTrianglesOnHardCasts))){  
                     //bottom left
                     ui.DrawRightTriangle(bottomLeft_LeftVertex, bottomLeft_RightVertex, bottomLeft_TopVertex, conf.BarBackColBorder);
                     //bottom right
@@ -521,11 +520,11 @@ namespace GCDTracker {
                     }
                 }
             }
-
+/*
             ui.DrawDebugText((conf.BarWidthRatio + 1) / 2.1f, -2f, conf.ClipTextSize, conf.ClipTextColor, conf.ClipBackColor, barWidth.ToString() 
                 + " " + barHeight.ToString() + " " + start.X.ToString() + " " + end.X.ToString() + " " + start.Y.ToString() + " " + end.Y.ToString() + " " + 
                 (end.X - start.X).ToString() + " " + (end.Y - start.Y).ToString());
-
+*/
 
             //in both modes:
             //draw the queuelock (if enabled)
@@ -547,11 +546,11 @@ namespace GCDTracker {
                     (int)(ui.w_cent.Y + halfBarHeight)
                     );
                 Vector2 queuelockStartVector_TopRight = new(
-                    (int)(ui.w_cent.X + ((queuelockStartBuffer + ((float)borderSize / barWidth)) * barWidth) - halfBarWidth),
+                    (int)(ui.w_cent.X + ((queuelockStartBuffer + ((float)(borderSize >= 1 ? borderSize : 1)/ barWidth)) * barWidth) - halfBarWidth),
                     (int)(ui.w_cent.Y - ((barHeight) / 2))
                     );
                 Vector2 queuelockStartVector_BottomRight = new(
-                    (int)(ui.w_cent.X + ((queuelockStartBuffer + ((float)borderSize / barWidth)) * barWidth) - halfBarWidth),
+                    (int)(ui.w_cent.X + ((queuelockStartBuffer + ((float)(borderSize >= 1 ? borderSize : 1) / barWidth)) * barWidth) - halfBarWidth),
                     (int)(ui.w_cent.Y + halfBarHeight)
                     );
                 
@@ -581,20 +580,24 @@ namespace GCDTracker {
                 
                 // in both modes:
                 // draw top (queuelock) triangles and the vertical border line
-                //top left
-                ui.DrawRightTriangle(topLeft_LeftVertex, topLeft_RightVertex, topLeft_BottomVertex, conf.BarBackColBorder);
-                //top right
-                ui.DrawRightTriangle(topRight_LeftVertex, topRight_RightVertex, topRight_BottomVertex, conf.BarBackColBorder);
-                //vertical bar
-                ui.DrawRectFilledNoAA(topLeft_RightVertex, bottomRight_LeftVertex, conf.BarBackColBorder);                
-                // in GCDBar mode:
-                // draw the bottom triangles too
-                if(!isCastBar && isShortCast) {
-                    //bottom left
-                    ui.DrawRightTriangle(bottomLeft_LeftVertex, bottomLeft_RightVertex, bottomLeft_TopVertex, conf.BarBackColBorder);
-                    //bottom right
-                    ui.DrawRightTriangle(bottomRight_LeftVertex, bottomRight_RightVertex, bottomRight_TopVertex, conf.BarBackColBorder);
+                if (conf.ShowQueuelockTriangles){
+                    //top left
+                    ui.DrawRightTriangle(topLeft_LeftVertex, topLeft_RightVertex, topLeft_BottomVertex, conf.BarBackColBorder);
+                    //top right
+                    ui.DrawRightTriangle(topRight_LeftVertex, topRight_RightVertex, topRight_BottomVertex, conf.BarBackColBorder);
+                
+                    // in GCDBar mode:
+                    // draw the bottom triangles too
+                    if(!isCastBar && isShortCast) {
+                        //bottom left
+                        ui.DrawRightTriangle(bottomLeft_LeftVertex, bottomLeft_RightVertex, bottomLeft_TopVertex, conf.BarBackColBorder);
+                        //bottom right
+                        ui.DrawRightTriangle(bottomRight_LeftVertex, bottomRight_RightVertex, bottomRight_TopVertex, conf.BarBackColBorder);
+                    }
                 }
+                //vertical bar
+                ui.DrawRectFilledNoAA(topLeft_RightVertex, bottomRight_LeftVertex, conf.BarBackColBorder); 
+
             }
 
             // in both modes:
