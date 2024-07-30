@@ -272,7 +272,7 @@ namespace GCDTracker
             }
             ImGui.End();
         }
-        public void DrawConfig() {
+        public void DrawConfig(float x_size, float y_size) {
             if (Migration4to5) DrawMigration4to5();
             if (!configEnabled) return;
             var scale = ImGui.GetIO().FontGlobalScale;
@@ -379,6 +379,7 @@ namespace GCDTracker
                         ImGui.SliderFloat("Border size", ref BarBorderSize, 0f, 10f);
                         Vector2 size = new(BarWidthRatio, BarHeightRatio);
                         ImGui.SliderFloat2("Width and height ratio", ref size, 0.1f, 1f);
+                        ImGui.Text("                                   " + ((int)(x_size * BarWidthRatio)).ToString()+ "x" +((int)(y_size * BarHeightRatio)).ToString());
                         BarWidthRatio = size.X;
                         BarHeightRatio = size.Y;
                     }
