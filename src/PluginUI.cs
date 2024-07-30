@@ -212,7 +212,9 @@ namespace GCDTracker
         //todo: maybe add outline to alert text
         public void DrawHardCastAbilityName(string abilityName, string combinedText, Vector2 textPos, float textSize) {
             if (!string.IsNullOrEmpty(abilityName)) {
-                ImGui.PushFont(UiBuilder.MonoFont); // probably not needed
+                
+                if (conf.OverrideDefaltFont)
+                    ImGui.PushFont(UiBuilder.MonoFont); // probably not needed
                 ImGui.SetWindowFontScale(textSize);
                 
                 uint outlineColor = ImGui.GetColorU32(new Vector4(0, 0, 0, 1)); // Black outline
@@ -233,13 +235,15 @@ namespace GCDTracker
                 draw.AddText(textPosCentered, textColor, abilityName);
 
                 ImGui.SetWindowFontScale(1f);
+                if (conf.OverrideDefaltFont)
                 ImGui.PopFont();
             }
         }
 
         public void DrawHardCastAbilityTime(string abilityTime, string combinedText, Vector2 textPos, float textSize) {
             if (!string.IsNullOrEmpty(abilityTime)) {
-                ImGui.PushFont(UiBuilder.MonoFont); // probably not needed
+                if (conf.OverrideDefaltFont)
+                    ImGui.PushFont(UiBuilder.MonoFont); // probably not needed
                 ImGui.SetWindowFontScale(textSize);
 
                 // Define the outline color and thickness
@@ -265,7 +269,8 @@ namespace GCDTracker
                 draw.AddText(textPosCentered, textColor, abilityTime);
                 
                 ImGui.SetWindowFontScale(1f);
-                ImGui.PopFont();
+                if (conf.OverrideDefaltFont)
+                    ImGui.PopFont();
             }
         }
 

@@ -67,6 +67,7 @@ namespace GCDTracker
         public bool CastBarEnabled = true;
         public bool SlideCastEnabled = true;
         public bool SlideCastFullBar = true;
+        public bool OverrideDefaltFont = false;
         public Vector4 slideCol = new(0f, 0f, 0f, 0.7f);
         public int triangleSize = 6;
         public float CastBarTextSize = 0.8f;
@@ -395,6 +396,7 @@ namespace GCDTracker
                     if (ImGui.BeginTabItem("Castbar")) {
                         ImGui.Checkbox("Enable Castbar Mode", ref CastBarEnabled);
                         ImGui.Checkbox("Enable Slidecast Functionality", ref SlideCastEnabled);
+                        ImGui.Checkbox("Override Default Font", ref OverrideDefaltFont);
                         ImGui.SliderInt("Queuelock and Slidecast Triangle Size", ref triangleSize, 0, 12);
                         ImGui.SliderFloat("Spell Name/Time Text Size", ref CastBarTextSize, 0.2f, 2f);
                         if (SlideCastEnabled)

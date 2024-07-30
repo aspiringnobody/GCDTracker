@@ -389,19 +389,22 @@ namespace GCDTracker {
         private void DrawBarElements(PluginUI ui, bool isCastBar, bool isShortCast, float castBarCurrentPos, float gcdTime_slidecastStart, float gcdTotal_slidecastEnd) {
             int barHeight = (int)(ui.w_size.Y * conf.BarHeightRatio);
             int barWidth = (int)(ui.w_size.X * conf.BarWidthRatio);
+            int halfBarHeight = barHeight % 2 == 0 ? (barHeight / 2) : (barHeight / 2) + 1;
+            int halfBarWidth = barWidth % 2 == 0 ? (barWidth / 2) : (barWidth / 2) + 1;
             int borderSize = (int)conf.BarBorderSize;
+            int halfBorderSize = borderSize % 2 == 0 ? (borderSize / 2) : (borderSize / 2) + 1;
             float barGCDClipTime = 0;
             Vector2 start = new(
                 (int)(ui.w_cent.X - (barWidth / 2)), 
                 (int)(ui.w_cent.Y - (barHeight / 2))
             );
             Vector2 end = new(
-                (int)(ui.w_cent.X + ((barWidth) / 2)), 
-                (int)(ui.w_cent.Y + ((barHeight) / 2))
+                (int)(ui.w_cent.X + halfBarWidth), 
+                (int)(ui.w_cent.Y + halfBarHeight)
             );
             Vector2 gcdBarEnd = new(
-                (int)(ui.w_cent.X + (castBarCurrentPos * barWidth) - (barWidth / 2)),
-                (int)(ui.w_cent.Y + ((barHeight) / 2))
+                (int)(ui.w_cent.X + (castBarCurrentPos * barWidth) - halfBarWidth),
+                (int)(ui.w_cent.Y + halfBarHeight)
             );
             
             // in both modes:
@@ -429,20 +432,20 @@ namespace GCDTracker {
                 //ui.DrawBar(slidecastStartBuffer, slidecastStartBuffer + ((float)borderSize / barWidth), barWidth, barHeight, conf.BarBackColBorder);
 
                 Vector2 slidecastStartVector_BottomLeft = new(
-                    (int)(ui.w_cent.X + (slidecastStart * barWidth) - (barWidth / 2)),
-                    (int)(ui.w_cent.Y + (barHeight / 2))
+                    (int)(ui.w_cent.X + (slidecastStart * barWidth) - halfBarWidth),
+                    (int)(ui.w_cent.Y + halfBarHeight)
                     );
                 Vector2 slidecastStartVector_TopRight = new(
-                    (int)(ui.w_cent.X + ((slidecastStart + ((float)borderSize / barWidth)) * barWidth) - (barWidth / 2)),
+                    (int)(ui.w_cent.X + ((slidecastStart + ((float)borderSize / barWidth)) * barWidth) - halfBarWidth),
                     (int)(ui.w_cent.Y - ((barHeight) / 2))
                     );
                 Vector2 slidecastStartVector_BottomRight = new(
-                    (int)(ui.w_cent.X + ((slidecastStart + ((float)borderSize / barWidth)) * barWidth) - (barWidth / 2)),
-                    (int)(ui.w_cent.Y + ((barHeight) / 2))
+                    (int)(ui.w_cent.X + ((slidecastStart + ((float)borderSize / barWidth)) * barWidth) - halfBarWidth),
+                    (int)(ui.w_cent.Y + halfBarHeight)
                     );
                 Vector2 slidecastEndVector = new(
-                    (int)(ui.w_cent.X + (slidecastEnd * barWidth) - (barWidth / 2)),
-                    (int)(ui.w_cent.Y + ((barHeight) / 2))
+                    (int)(ui.w_cent.X + (slidecastEnd * barWidth) - halfBarWidth),
+                    (int)(ui.w_cent.Y + halfBarHeight)
                 );
 
                 Vector2 topRight_LeftVertex = new Vector2(slidecastStartVector_TopRight.X, slidecastStartVector_TopRight.Y);
@@ -487,8 +490,8 @@ namespace GCDTracker {
                         if (!isHardCast) {
                             // create end vertex
                             Vector2 clipEndVector = new(
-                                (int)(ui.w_cent.X + ((barGCDClipTime / gcdTotal) * barWidth) - (barWidth / 2)),
-                                (int)(ui.w_cent.Y + ((barHeight) / 2))
+                                (int)(ui.w_cent.X + ((barGCDClipTime / gcdTotal) * barWidth) - halfBarWidth),
+                                (int)(ui.w_cent.Y + halfBarHeight)
                             );
                             // Draw the clipped part at the beginning
                             ui.DrawRectFilledNoAA(start, clipEndVector, conf.clipCol);
@@ -501,7 +504,7 @@ namespace GCDTracker {
                         (int)(ui.w_cent.Y - (barHeight / 2))
                     );
                     Vector2 oGCDEndVector = new(
-                        (int)(ui.w_cent.X + ((ogcdEnd / gcdTotal) * barWidth) - (barWidth / 2)),
+                        (int)(ui.w_cent.X + ((ogcdEnd / gcdTotal) * barWidth) - halfBarWidth),
                         (int)(ui.w_cent.Y + ((barHeight) / 2))
                     );
 
@@ -519,7 +522,9 @@ namespace GCDTracker {
                 }
             }
 
-            //ui.DrawDebugText((conf.BarWidthRatio + 1) / 2.1f, 1f, conf.ClipTextSize, conf.ClipTextColor, conf.ClipBackColor, end.X.ToString() + " " + slidecastEndVector.X.ToString());
+            ui.DrawDebugText((conf.BarWidthRatio + 1) / 2.1f, -2f, conf.ClipTextSize, conf.ClipTextColor, conf.ClipBackColor, barWidth.ToString() 
+                + " " + barHeight.ToString() + " " + start.X.ToString() + " " + end.X.ToString() + " " + start.Y.ToString() + " " + end.Y.ToString() + " " + 
+                (end.X - start.X).ToString() + " " + (end.Y - start.Y).ToString());
 
 
             //in both modes:
@@ -534,20 +539,20 @@ namespace GCDTracker {
 
                 //ui.DrawBar(queuelockStartBuffer, queuelockStartBuffer + ((float)borderSize / barWidth), barWidth, barHeight, conf.BarBackColBorder);
                 Vector2 queuelockStartVector_TopLeft = new(
-                    (int)(ui.w_cent.X + (queuelockStartBuffer * barWidth) - (barWidth / 2)),
+                    (int)(ui.w_cent.X + (queuelockStartBuffer * barWidth) - halfBarWidth),
                     (int)(ui.w_cent.Y - (barHeight / 2))
                     );
                 Vector2 queuelockStartVector_BottomLeft = new(
-                    (int)(ui.w_cent.X + (queuelockStartBuffer * barWidth) - (barWidth / 2)),
-                    (int)(ui.w_cent.Y + (barHeight / 2))
+                    (int)(ui.w_cent.X + (queuelockStartBuffer * barWidth) - halfBarWidth),
+                    (int)(ui.w_cent.Y + halfBarHeight)
                     );
                 Vector2 queuelockStartVector_TopRight = new(
-                    (int)(ui.w_cent.X + ((queuelockStartBuffer + ((float)borderSize / barWidth)) * barWidth) - (barWidth / 2)),
+                    (int)(ui.w_cent.X + ((queuelockStartBuffer + ((float)borderSize / barWidth)) * barWidth) - halfBarWidth),
                     (int)(ui.w_cent.Y - ((barHeight) / 2))
                     );
                 Vector2 queuelockStartVector_BottomRight = new(
-                    (int)(ui.w_cent.X + ((queuelockStartBuffer + ((float)borderSize / barWidth)) * barWidth) - (barWidth / 2)),
-                    (int)(ui.w_cent.Y + ((barHeight) / 2))
+                    (int)(ui.w_cent.X + ((queuelockStartBuffer + ((float)borderSize / barWidth)) * barWidth) - halfBarWidth),
+                    (int)(ui.w_cent.Y + halfBarHeight)
                     );
                 
                 // clamp the right virtex of the right triangles to the end of the bar
@@ -556,8 +561,8 @@ namespace GCDTracker {
                 // for the love of me, i have no idea why conf.triangleSize +1 is necessary.
                 // stuff of nightmares -- really.
                 float rightClamp = queuelockStartVector_TopRight.X + (conf.triangleSize + 1);
-                if (rightClamp >= (int)(ui.w_cent.X + (1f * barWidth) - (barWidth / 2)))
-                    rightClamp = (int)(ui.w_cent.X + (1f * barWidth) - (barWidth / 2));
+                if (rightClamp >= end.X)
+                    rightClamp = end.X;
 
                 // create vertices for the top (queuelock) triangles
                 Vector2 topLeft_LeftVertex = new Vector2(queuelockStartVector_TopLeft.X - conf.triangleSize, queuelockStartVector_TopLeft.Y);
@@ -596,8 +601,8 @@ namespace GCDTracker {
             // draw borders
             if (borderSize > 0) {
                 ui.DrawRect(
-                    start - new Vector2((int)(borderSize / 2), (int)(borderSize / 2)),
-                    end + new Vector2((int)(borderSize / 2), (int)(borderSize / 2)),
+                    start - new Vector2(halfBorderSize, halfBorderSize),
+                    end + new Vector2(halfBorderSize, halfBorderSize),
                     conf.BarBackColBorder, borderSize);
             }
         }
