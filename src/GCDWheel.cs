@@ -421,32 +421,49 @@ namespace GCDTracker {
             
             // in Castbar mode:
             // draw the slidecast bar
-            if (conf.SlideCastEnabled && isCastBar) {
+            if (conf.SlideCastEnabled && (isCastBar || (!isCastBar && isShortCast && 
+                (gcdTime_slidecastStart < gcdTotal_slidecastEnd)))) {
                 float slidecastStart = gcdTime_slidecastStart;
                 float slidecastEnd = gcdTotal_slidecastEnd;
                 if (slidecastStart <= castBarCurrentPos)
                     slidecastStart = castBarCurrentPos;
+                if (!isCastBar && isShortCast) {
+                    slidecastStart = castBarCurrentPos;
+                }
 
 
                 //ui.DrawBar(slidecastStartBuffer, slidecastEndBuffer, barWidth, barHeight, conf.slideCol);
                 //ui.DrawBar(slidecastStartBuffer, slidecastStartBuffer + ((float)borderSize / barWidth), barWidth, barHeight, conf.BarBackColBorder);
-
-                Vector2 slidecastStartVector_BottomLeft = new(
-                    (int)(ui.w_cent.X + (slidecastStart * barWidth) - halfBarWidth),
-                    (int)(ui.w_cent.Y + halfBarHeight)
-                    );
+                
                 Vector2 slidecastStartVector_TopRight = new(
                     (int)(ui.w_cent.X + ((slidecastStart + ((float)(borderSize >= 1 ? borderSize : 1) / barWidth)) * barWidth) - halfBarWidth),
                     (int)(ui.w_cent.Y - ((barHeight) / 2))
+                    );
+                Vector2 slidecastStartVector_BottomLeft = new(
+                    (int)(ui.w_cent.X + (slidecastStart * barWidth) - halfBarWidth),
+                    (int)(ui.w_cent.Y + halfBarHeight)
                     );
                 Vector2 slidecastStartVector_BottomRight = new(
                     (int)(ui.w_cent.X + ((slidecastStart + ((float)(borderSize >= 1 ? borderSize : 1) / barWidth)) * barWidth) - halfBarWidth),
                     (int)(ui.w_cent.Y + halfBarHeight)
                     );
-                Vector2 slidecastEndVector = new(
+
+                Vector2 slidecastEndVector_TopLeft = new(
+                    (int)(ui.w_cent.X + (slidecastEnd * barWidth) - halfBarWidth),
+                    (int)(ui.w_cent.Y - (barHeight / 2))
+                    );
+                Vector2 slidecastEndVector_BottomLeft = new(
                     (int)(ui.w_cent.X + (slidecastEnd * barWidth) - halfBarWidth),
                     (int)(ui.w_cent.Y + halfBarHeight)
-                );
+                    );
+                Vector2 slidecastEndVector_BottomRight = new(
+                    (int)(ui.w_cent.X + ((slidecastEnd + ((float)(borderSize >= 1 ? borderSize : 1) / barWidth)) * barWidth) - halfBarWidth),
+                    (int)(ui.w_cent.Y + halfBarHeight)
+                    );
+
+                float rightClamp = slidecastStartVector_BottomRight.X + (conf.triangleSize + 1);
+                if (rightClamp >= end.X)
+                    rightClamp = end.X;
 
                 Vector2 topRight_LeftVertex = new Vector2(slidecastStartVector_TopRight.X, slidecastStartVector_TopRight.Y);
 
@@ -454,19 +471,37 @@ namespace GCDTracker {
                 Vector2 bottomLeft_RightVertex = new Vector2(slidecastStartVector_BottomLeft.X, slidecastStartVector_BottomLeft.Y);
                 Vector2 bottomLeft_TopVertex = new Vector2(slidecastStartVector_BottomLeft.X, slidecastStartVector_BottomLeft.Y - conf.triangleSize);
                 Vector2 bottomRight_LeftVertex = new Vector2(slidecastStartVector_BottomRight.X, slidecastStartVector_BottomRight.Y);
-                Vector2 bottomRight_RightVertex = new Vector2(slidecastStartVector_BottomRight.X + conf.triangleSize + 1, slidecastStartVector_BottomRight.Y);
+                Vector2 bottomRight_RightVertex = new Vector2(rightClamp, slidecastStartVector_BottomRight.Y);
                 Vector2 bottomRight_TopVertex = new Vector2(slidecastStartVector_BottomRight.X, slidecastStartVector_BottomRight.Y - (conf.triangleSize + 1));
 
-                // draw slidecast bar
-                ui.DrawRectFilledNoAA(topRight_LeftVertex, slidecastEndVector, conf.slideCol);
-                // draw sidecast vertical line
+                Vector2 endTopLeft_RightVertex = new Vector2(slidecastEndVector_TopLeft.X, slidecastEndVector_TopLeft.Y);
 
+                Vector2 endBottomRight_LeftVertex = new Vector2(slidecastEndVector_BottomRight.X, slidecastEndVector_BottomRight.Y);
+                Vector2 endBottomRight_RightVertex = new Vector2(slidecastEndVector_BottomRight.X + conf.triangleSize + 1, slidecastEndVector_BottomRight.Y);
+                Vector2 endBottomRight_TopVertex = new Vector2(slidecastEndVector_BottomRight.X, slidecastEndVector_BottomRight.Y - (conf.triangleSize + 1));
+
+                if (!(!isCastBar && isShortCast && (gcdTime_slidecastStart < gcdTotal_slidecastEnd))) {
+                    // draw slidecast bar
+                    ui.DrawRectFilledNoAA(topRight_LeftVertex, slidecastEndVector_BottomLeft, conf.slideCol);
+                }
+                // draw sidecast vertical line
                 ui.DrawRectFilledNoAA(topRight_LeftVertex, bottomLeft_RightVertex, conf.BarBackColBorder);
-                if(conf.ShowSlidecastTriangles &&(isShortCast || (isCastBar && conf.ShowTrianglesOnHardCasts))){  
-                    //bottom left
-                    ui.DrawRightTriangle(bottomLeft_LeftVertex, bottomLeft_RightVertex, bottomLeft_TopVertex, conf.BarBackColBorder);
-                    //bottom right
-                    ui.DrawRightTriangle(bottomRight_LeftVertex, bottomRight_RightVertex, bottomRight_TopVertex, conf.BarBackColBorder);
+
+                if(conf.ShowSlidecastTriangles && (isShortCast || (isCastBar && conf.ShowTrianglesOnHardCasts))){  
+                        //bottom left
+                        ui.DrawRightTriangle(bottomLeft_LeftVertex, bottomLeft_RightVertex, bottomLeft_TopVertex, conf.BarBackColBorder);
+
+                        if(conf.SlideCastFullBar || (isCastBar && !isShortCast) || (!isCastBar && isShortCast && !conf.SlideCastFullBar)) {
+                            //bottom right
+                            ui.DrawRightTriangle(bottomRight_LeftVertex, bottomRight_RightVertex, bottomRight_TopVertex, conf.BarBackColBorder);
+                        }
+                        if(!conf.SlideCastFullBar && isShortCast) {
+                            //end right
+                            ui.DrawRectFilledNoAA(endTopLeft_RightVertex, endBottomRight_LeftVertex, conf.BarBackColBorder);
+                            ui.DrawRightTriangle(endBottomRight_LeftVertex, endBottomRight_RightVertex, endBottomRight_TopVertex, conf.BarBackColBorder);
+                        }
+                    
+
                 }
             }
 
@@ -541,13 +576,13 @@ namespace GCDTracker {
                     (int)(ui.w_cent.X + (queuelockStartBuffer * barWidth) - halfBarWidth),
                     (int)(ui.w_cent.Y - (barHeight / 2))
                     );
-                Vector2 queuelockStartVector_BottomLeft = new(
-                    (int)(ui.w_cent.X + (queuelockStartBuffer * barWidth) - halfBarWidth),
-                    (int)(ui.w_cent.Y + halfBarHeight)
-                    );
                 Vector2 queuelockStartVector_TopRight = new(
                     (int)(ui.w_cent.X + ((queuelockStartBuffer + ((float)(borderSize >= 1 ? borderSize : 1)/ barWidth)) * barWidth) - halfBarWidth),
                     (int)(ui.w_cent.Y - ((barHeight) / 2))
+                    );
+                Vector2 queuelockStartVector_BottomLeft = new(
+                    (int)(ui.w_cent.X + (queuelockStartBuffer * barWidth) - halfBarWidth),
+                    (int)(ui.w_cent.Y + halfBarHeight)
                     );
                 Vector2 queuelockStartVector_BottomRight = new(
                     (int)(ui.w_cent.X + ((queuelockStartBuffer + ((float)(borderSize >= 1 ? borderSize : 1) / barWidth)) * barWidth) - halfBarWidth),
@@ -588,7 +623,7 @@ namespace GCDTracker {
                 
                     // in GCDBar mode:
                     // draw the bottom triangles too
-                    if(!isCastBar && isShortCast) {
+                    if(!isCastBar && isShortCast && conf.SlideCastFullBar) {
                         //bottom left
                         ui.DrawRightTriangle(bottomLeft_LeftVertex, bottomLeft_RightVertex, bottomLeft_TopVertex, conf.BarBackColBorder);
                         //bottom right
