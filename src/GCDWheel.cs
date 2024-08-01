@@ -473,7 +473,7 @@ namespace GCDTracker {
 
             public SlideCastStartVertices(BarInfo bar, BarDecisionSwitch go) {
                 int rightClamp = (int)(bar.CenterX + ((go.Slide_Bar_Start + bar.BorderWidthPercent) * bar.Width) - bar.HalfWidth);
-                    rightClamp += bar.TriangleOffset;
+                    rightClamp += bar.TriangleOffset + 1;
                 if (rightClamp >= bar.EndVertex.X)
                     rightClamp = (int)bar.EndVertex.X;
                 
@@ -507,7 +507,7 @@ namespace GCDTracker {
                 );
                 BR_Y = new(
                     BR_C.X,
-                    BR_C.Y - bar.TriangleOffset
+                    BR_C.Y - (bar.TriangleOffset + 1)
                 );
             }
         }
@@ -526,7 +526,7 @@ namespace GCDTracker {
 
             public SlideCastEndVertices(BarInfo bar, BarDecisionSwitch go) {
                 int rightClamp = (int)(bar.CenterX + ((go.Slide_Bar_End + bar.BorderWidthPercent) * bar.Width) - bar.HalfWidth);
-                    rightClamp += bar.TriangleOffset;
+                    rightClamp += bar.TriangleOffset + 1;
                 if (rightClamp >= bar.EndVertex.X)
                     rightClamp = (int)bar.EndVertex.X;
                 
@@ -560,7 +560,7 @@ namespace GCDTracker {
                 );
                 BR_Y = new(
                     BR_C.X,
-                    BR_C.Y - bar.TriangleOffset
+                    BR_C.Y - (bar.TriangleOffset + 1)
                 );
             }
         }
@@ -593,7 +593,7 @@ namespace GCDTracker {
                 }
                 
                 int rightClamp = (int)(bar.CenterX + ((queuelockStart + bar.BorderWidthPercent) * bar.Width) - bar.HalfWidth);
-                    rightClamp += bar.TriangleOffset;
+                    rightClamp += bar.TriangleOffset + 1;
                 if (rightClamp >= bar.EndVertex.X)
                     rightClamp = (int)bar.EndVertex.X;
                 
@@ -621,7 +621,7 @@ namespace GCDTracker {
                 );
                 TR_Y = new(
                     TR_C.X,
-                    TR_C.Y + bar.TriangleOffset
+                    TR_C.Y + (bar.TriangleOffset + 1)
                 );
                 
                 BL_C = new(
@@ -648,7 +648,7 @@ namespace GCDTracker {
                 );
                 BR_Y = new(
                     BR_C.X,
-                    BR_C.Y - bar.TriangleOffset
+                    BR_C.Y - (bar.TriangleOffset + 1)
                 );
             }
         }
@@ -662,17 +662,13 @@ namespace GCDTracker {
             public bool Queue_BottomRightTri { get; private set; }
             public bool SlideStart_VerticalBar { get; private set; }
             public bool SlideEnd_VerticalBar { get; private set; }
-            //public bool Slide_BotTriangle { get; private set; }
             public bool SlideStart_LeftTri { get; private set; }
             public bool SlideStart_RightTri { get; private set; }
             public bool SlideEnd_RightTri { get; private set; }
             public bool Slide_Background { get; private set; }
             public float Slide_Bar_Start { get; private set; }
             public float Slide_Bar_End { get; private set; }
-            public bool Progress_TopTri { get; private set; }
-            public bool Progress_Bot_Left { get; private set; }
-            public bool Progress_Bot_Right { get; private set; }
-
+            
             private BarDecisionSwitch() { }
 
             public static BarDecisionSwitch Instance {
@@ -695,7 +691,6 @@ namespace GCDTracker {
                             SlideStart_VerticalBar = true;
                             SlideEnd_VerticalBar = !conf.SlideCastFullBar && (0.81f - bar.GCDTotal_SlidecastEnd > 0.02f);
                             Slide_Bar_Start = bar.GCDTime_SlidecastStart;
-                            //Slide_BotTriangle = conf.SlideCastFullBar && conf.ShowSlidecastTriangles;
                             SlideStart_LeftTri = conf.ShowSlidecastTriangles;
                             SlideStart_RightTri = conf.SlideCastFullBar && conf.ShowSlidecastTriangles;
                             SlideEnd_RightTri = !conf.SlideCastFullBar && conf.ShowSlidecastTriangles;
@@ -709,13 +704,11 @@ namespace GCDTracker {
                     if (SlideStart_LeftTri && Slide_Bar_Start >= Slide_Bar_End) {
                         SlideEnd_VerticalBar = false;
                         SlideEnd_RightTri = false;
-                        //Slide_BotTriangle = true;
                         Slide_Background = false;
                         SlideStart_LeftTri = true;
                         SlideStart_RightTri = true;
                     }
                     if (conf.QueueLockEnabled && (SlideStart_LeftTri || SlideStart_RightTri) && Slide_Bar_Start >= 0.8f) {
-                        //Slide_BotTriangle = false;
                         SlideStart_LeftTri = false;
                         SlideStart_RightTri = false;
                         SlideStart_VerticalBar = false;
@@ -730,7 +723,6 @@ namespace GCDTracker {
                         SlideEnd_RightTri = false;
                         SlideEnd_VerticalBar = false;
                         SlideStart_VerticalBar = true;
-                        //Slide_BotTriangle = true;
                         SlideStart_VerticalBar = true;
                     }
                     if (bar.IsCastBar && !bar.IsShortCast && conf.ShowSlidecastTriangles) {
@@ -746,16 +738,12 @@ namespace GCDTracker {
                     Queue_BottomRightTri = false;
                     SlideStart_VerticalBar = false;
                     SlideEnd_VerticalBar = false;
-                    //Slide_BotTriangle = false;
                     SlideStart_LeftTri = false;
                     SlideStart_RightTri = false;
                     SlideEnd_RightTri = false;
                     Slide_Background = false;
                     Slide_Bar_Start = 0f;
                     Slide_Bar_End = 0f;
-                    Progress_TopTri = false;
-                    Progress_Bot_Left = false;
-                    Progress_Bot_Right = false;
                 }
             }
         }
@@ -776,6 +764,7 @@ namespace GCDTracker {
                 isCastBar, 
                 isShortCast
             );
+
             var go = BarDecisionSwitch.Instance;
                 go.Update(bar, conf, isRunning);
 
@@ -801,7 +790,6 @@ namespace GCDTracker {
             
             // in Castbar mode:
             // draw the slidecast bar
-
             if (conf.SlideCastEnabled){
                 DrawSlideCast(ui, sc_sv, sc_ev, go);
                 }
@@ -830,7 +818,6 @@ namespace GCDTracker {
                             );
                             // Draw the clipped part at the beginning
                             ui.DrawRectFilledNoAA(bar.StartVertex, clipEndVector, conf.clipCol);
-                            //ui.DrawBar(0, barGCDClipTime / gcdTotal, barWidth, barHeight, conf.clipCol);
                         }
                     }
 
@@ -844,7 +831,6 @@ namespace GCDTracker {
                     );
 
                     ui.DrawRectFilledNoAA(oGCDStartVector, oGCDEndVector, isClipping ? conf.clipCol : conf.anLockCol);
-                    //ui.DrawBar(ogcdStart / gcdTotal, ogcdEnd / gcdTotal, barWidth, barHeight, isClipping ? conf.clipCol : conf.anLockCol);
                     if (!iscast && (!isClipping || ogcdStart > 0.01f)) {
                         Vector2 clipPos = new(
                             bar.CenterX + (ogcdStart / gcdTotal * bar.Width) - bar.RawHalfWidth,
@@ -914,6 +900,7 @@ namespace GCDTracker {
             //bottom right triangle
             if (go.Queue_BottomRightTri)
                 ui.DrawRightTriangle(ql_v.BR_C, ql_v.BR_X, ql_v.BR_Y, conf.BarBackColBorder); 
+            //vertical bar
             if (go.Queue_VerticalBar)
             ui.DrawRectFilledNoAA(ql_v.TL_C, ql_v.BR_C, conf.BarBackColBorder); 
         }
