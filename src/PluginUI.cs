@@ -1,7 +1,6 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Animation;
 using Dalamud.Interface.Animation.EasingFunctions;
-using Dalamud.Interface.ManagedFontAtlas;
 using GCDTracker.Data;
 using ImGuiNET;
 using System;

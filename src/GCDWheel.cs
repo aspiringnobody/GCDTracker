@@ -3,7 +3,6 @@ using Dalamud.Logging;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using GCDTracker.Data;
-using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -386,26 +385,406 @@ namespace GCDTracker {
                 ui.DrawHardCastAbilityTime(hardCastAbilityTime, combinedText, spellTimePos, conf.CastBarTextSize);
         }
 
+        public class BarInfo {
+            public float CenterX { get; }
+            public float CenterY { get; }
+            public int Width { get; }
+            public int HalfWidth { get; }
+            public int RawHalfWidth { get; }
+            public int Height { get; }
+            public int HalfHeight { get; }
+            public int RawHalfHeight { get; }
+            public int BorderSize { get; }
+            public int HalfBorderSize { get; }
+            public int BorderSizeAdj { get; }
+            public float BorderWidthPercent { get; }
+            public float CurrentPos { get; }
+            public float GCDTime_SlidecastStart { get; } 
+            public float GCDTotal_SlidecastEnd { get; }
+            public int TriangleOffset { get; }
+            public bool IsCastBar { get; } 
+            public bool IsShortCast { get; } 
+            public Vector2 StartVertex { get; }
+            public Vector2 EndVertex { get; }
+            public Vector2 ProgressVertex { get; }
+
+            public BarInfo(
+                float sizeX, 
+                float centX, 
+                float widthRatio, 
+                float sizeY, 
+                float centY, 
+                float heightRatio, 
+                float borderFloat,
+                float castBarCurrentPos,
+                float gcdTime_slidecastStart, 
+                float gcdTotal_slidecastEnd,
+                int triangleOffset,
+                bool isCastBar, 
+                bool isShortCast) {
+                
+
+                CenterX = centX;
+                CenterY = centY;
+                Width = (int)(sizeX * widthRatio);
+                HalfWidth = Width % 2 == 0 ? (Width / 2) : (Width / 2) + 1;
+                RawHalfWidth = Width / 2;
+                Height = (int)(sizeY * heightRatio);
+                HalfHeight = Height % 2 == 0 ? (Height / 2) : (Height / 2) + 1;
+                RawHalfHeight = Height / 2;
+                BorderSize = (int)borderFloat;
+                HalfBorderSize = BorderSize % 2 == 0 ? (BorderSize / 2) : (BorderSize / 2) + 1;
+                BorderSizeAdj = BorderSize >= 1 ? BorderSize : 1;
+                BorderWidthPercent = (float)BorderSizeAdj / (float)Width;
+                CurrentPos = castBarCurrentPos;
+                GCDTime_SlidecastStart = gcdTime_slidecastStart;
+                GCDTotal_SlidecastEnd = gcdTotal_slidecastEnd;
+                TriangleOffset = triangleOffset;
+                IsCastBar = isCastBar;
+                IsShortCast = isShortCast;
+                StartVertex = new(
+                    (int)(CenterX - RawHalfWidth), 
+                    (int)(CenterY - RawHalfHeight)
+                );
+                EndVertex = new(
+                    (int)(CenterX + HalfWidth), 
+                    (int)(CenterY + HalfHeight)
+                );
+                ProgressVertex = new(
+                    (int)(CenterX + ((CurrentPos + ((float)BorderSizeAdj / Width)) * Width) - HalfWidth),
+                    (int)(CenterY + HalfHeight)
+                );
+            }
+        }
+
+
+
+        private class SlideCastStartVertices {
+            public Vector2 TL_C { get; }
+
+            public Vector2 BL_C { get; }
+            public Vector2 BL_X { get; }
+            public Vector2 BL_Y { get; }
+
+            public Vector2 BR_C { get; }
+            public Vector2 BR_X { get; }
+            public Vector2 BR_Y { get; }
+
+
+            public SlideCastStartVertices(BarInfo bar, BarDecisionSwitch go) {
+                int rightClamp = (int)(bar.CenterX + ((go.Slide_Bar_Start + bar.BorderWidthPercent) * bar.Width) - bar.HalfWidth);
+                    rightClamp += bar.TriangleOffset;
+                if (rightClamp >= bar.EndVertex.X)
+                    rightClamp = (int)bar.EndVertex.X;
+                
+                
+                TL_C = new(                    
+                    (int)(bar.CenterX + (go.Slide_Bar_Start * bar.Width) - bar.HalfWidth),
+                    (int)(bar.CenterY - bar.RawHalfHeight)
+                );
+                
+                BL_C = new(
+                    (int)(bar.CenterX + (go.Slide_Bar_Start * bar.Width) - bar.HalfWidth),
+                    (int)(bar.CenterY + bar.HalfHeight)
+                );
+                BL_X = new(
+                    BL_C.X - bar.TriangleOffset,
+                    BL_C.Y
+                );
+                BL_Y = new(
+                    BL_C.X,
+                    BL_C.Y - bar.TriangleOffset
+                );
+
+
+                BR_C = new(
+                    (int)(bar.CenterX + ((go.Slide_Bar_Start + ((float)bar.BorderSizeAdj / bar.Width)) * bar.Width) - bar.HalfWidth),
+                    (int)(bar.CenterY + bar.HalfHeight)
+                );
+                BR_X = new(
+                    rightClamp,
+                    BR_C.Y
+                );
+                BR_Y = new(
+                    BR_C.X,
+                    BR_C.Y - bar.TriangleOffset
+                );
+            }
+        }
+
+        private class SlideCastEndVertices {
+            public Vector2 TL_C { get; }
+
+            public Vector2 BL_C { get; }
+            public Vector2 BL_X { get; }
+            public Vector2 BL_Y { get; }
+
+            public Vector2 BR_C { get; }
+            public Vector2 BR_X { get; }
+            public Vector2 BR_Y { get; }
+
+
+            public SlideCastEndVertices(BarInfo bar, BarDecisionSwitch go) {
+                int rightClamp = (int)(bar.CenterX + ((go.Slide_Bar_End + bar.BorderWidthPercent) * bar.Width) - bar.HalfWidth);
+                    rightClamp += bar.TriangleOffset;
+                if (rightClamp >= bar.EndVertex.X)
+                    rightClamp = (int)bar.EndVertex.X;
+                
+                
+                TL_C = new(                    
+                    (int)(bar.CenterX + (go.Slide_Bar_End * bar.Width) - bar.HalfWidth),
+                    (int)(bar.CenterY - bar.RawHalfHeight)
+                );
+                
+                BL_C = new(
+                    (int)(bar.CenterX + (go.Slide_Bar_End * bar.Width) - bar.HalfWidth),
+                    (int)(bar.CenterY + bar.HalfHeight)
+                );
+                BL_X = new(
+                    BL_C.X - bar.TriangleOffset,
+                    BL_C.Y
+                );
+                BL_Y = new(
+                    BL_C.X,
+                    BL_C.Y - bar.TriangleOffset
+                );
+
+
+                BR_C = new(
+                    (int)(bar.CenterX + ((go.Slide_Bar_End + ((float)bar.BorderSizeAdj / bar.Width)) * bar.Width) - bar.HalfWidth),
+                    (int)(bar.CenterY + bar.HalfHeight)
+                );
+                BR_X = new(
+                    rightClamp,
+                    BR_C.Y
+                );
+                BR_Y = new(
+                    BR_C.X,
+                    BR_C.Y - bar.TriangleOffset
+                );
+            }
+        }
+
+        private class QueueLockVertices {
+            public Vector2 TL_C { get; }
+            public Vector2 TL_X { get; }
+            public Vector2 TL_Y { get; }
+
+            public Vector2 TR_C { get; }
+            public Vector2 TR_X { get; }
+            public Vector2 TR_Y { get; }
+
+            public Vector2 BL_C { get; }
+            public Vector2 BL_X { get; }
+            public Vector2 BL_Y { get; }
+
+            public Vector2 BR_C { get; }
+            public Vector2 BR_X { get; }
+            public Vector2 BR_Y { get; }
+
+
+            public QueueLockVertices(BarInfo bar, bool SlideCastEnabled, bool QueueLockEnabled) {
+                float queuelockStart = 0.8f;
+                if (QueueLockEnabled && !(!bar.IsShortCast && bar.IsCastBar)) {
+                    if (bar.CurrentPos >= 0.8f)
+                        queuelockStart = bar.CurrentPos;
+                        if (bar.CurrentPos >= 1f - bar.BorderWidthPercent) //??
+                            queuelockStart = 1f - bar.BorderWidthPercent; //??
+                }
+                
+                int rightClamp = (int)(bar.CenterX + ((queuelockStart + bar.BorderWidthPercent) * bar.Width) - bar.HalfWidth);
+                    rightClamp += bar.TriangleOffset;
+                if (rightClamp >= bar.EndVertex.X)
+                    rightClamp = (int)bar.EndVertex.X;
+                
+                
+                TL_C = new(                    
+                    (int)(bar.CenterX + (queuelockStart * bar.Width) - bar.HalfWidth),
+                    (int)(bar.CenterY - bar.RawHalfHeight)
+                );
+                TL_X = new(
+                    TL_C.X - bar.TriangleOffset, 
+                    TL_C.Y
+                );
+                TL_Y = new(
+                    TL_C.X, 
+                    TL_C.Y + bar.TriangleOffset
+                );
+
+                TR_C = new(
+                    (int)(bar.CenterX + ((queuelockStart + ((float)bar.BorderSizeAdj/ bar.Width)) * bar.Width) - bar.HalfWidth),
+                    (int)(bar.CenterY - bar.RawHalfHeight)
+                );
+                TR_X = new(
+                    rightClamp,
+                    TR_C.Y
+                );
+                TR_Y = new(
+                    TR_C.X,
+                    TR_C.Y + bar.TriangleOffset
+                );
+                
+                BL_C = new(
+                    (int)(bar.CenterX + (queuelockStart * bar.Width) - bar.HalfWidth),
+                    (int)(bar.CenterY + bar.HalfHeight)
+                );
+                BL_X = new(
+                    BL_C.X - bar.TriangleOffset,
+                    BL_C.Y
+                );
+                BL_Y = new(
+                    BL_C.X,
+                    BL_C.Y - bar.TriangleOffset
+                );
+
+
+                BR_C = new(
+                    (int)(bar.CenterX + ((queuelockStart + ((float)bar.BorderSizeAdj / bar.Width)) * bar.Width) - bar.HalfWidth),
+                    (int)(bar.CenterY + bar.HalfHeight)
+                );
+                BR_X = new(
+                    rightClamp,
+                    BR_C.Y
+                );
+                BR_Y = new(
+                    BR_C.X,
+                    BR_C.Y - bar.TriangleOffset
+                );
+            }
+        }
+
+        public class BarDecisionSwitch {
+            private static BarDecisionSwitch instance;
+
+            public bool Queue_VerticalBar { get; private set; }
+            public bool Queue_TopTriangle { get; private set; }
+            public bool Queue_BottomLeftTri { get; private set; }
+            public bool Queue_BottomRightTri { get; private set; }
+            public bool SlideStart_VerticalBar { get; private set; }
+            public bool SlideEnd_VerticalBar { get; private set; }
+            //public bool Slide_BotTriangle { get; private set; }
+            public bool SlideStart_LeftTri { get; private set; }
+            public bool SlideStart_RightTri { get; private set; }
+            public bool SlideEnd_RightTri { get; private set; }
+            public bool Slide_Background { get; private set; }
+            public float Slide_Bar_Start { get; private set; }
+            public float Slide_Bar_End { get; private set; }
+            public bool Progress_TopTri { get; private set; }
+            public bool Progress_Bot_Left { get; private set; }
+            public bool Progress_Bot_Right { get; private set; }
+
+            private BarDecisionSwitch() { }
+
+            public static BarDecisionSwitch Instance {
+                get {
+                    instance ??= new BarDecisionSwitch();
+                    return instance;
+                }
+            }
+
+            public void Update(BarInfo bar, Configuration conf, bool isRunning) {                
+                if (isRunning) {
+                    if (bar.CurrentPos < 0.04f) {
+                        if (conf.QueueLockEnabled && (!bar.IsCastBar || bar.IsShortCast)) {
+                            Queue_VerticalBar = true;
+                            Queue_TopTriangle = conf.ShowQueuelockTriangles;
+                            Queue_BottomRightTri = bar.IsShortCast && !conf.SlideCastFullBar && ((0.81f - bar.GCDTotal_SlidecastEnd) <= 0.02f);
+                        }
+                        if (conf.SlideCastEnabled && bar.IsCastBar) {
+                            Slide_Background = true;
+                            SlideStart_VerticalBar = true;
+                            SlideEnd_VerticalBar = !conf.SlideCastFullBar && (0.81f - bar.GCDTotal_SlidecastEnd > 0.02f);
+                            Slide_Bar_Start = bar.GCDTime_SlidecastStart;
+                            //Slide_BotTriangle = conf.SlideCastFullBar && conf.ShowSlidecastTriangles;
+                            SlideStart_LeftTri = conf.ShowSlidecastTriangles;
+                            SlideStart_RightTri = conf.SlideCastFullBar && conf.ShowSlidecastTriangles;
+                            SlideEnd_RightTri = !conf.SlideCastFullBar && conf.ShowSlidecastTriangles;
+                            Slide_Bar_End = conf.SlideCastFullBar ? 1f : bar.GCDTotal_SlidecastEnd; // - borderwidth?
+                        }
+                    }
+                    if (conf.SlideCastEnabled) {
+                        if (Slide_Bar_Start < bar.CurrentPos)
+                            Slide_Bar_Start = bar.CurrentPos;
+                    }
+                    if (SlideStart_LeftTri && Slide_Bar_Start >= Slide_Bar_End) {
+                        SlideEnd_VerticalBar = false;
+                        SlideEnd_RightTri = false;
+                        //Slide_BotTriangle = true;
+                        Slide_Background = false;
+                        SlideStart_LeftTri = true;
+                        SlideStart_RightTri = true;
+                    }
+                    if (conf.QueueLockEnabled && (SlideStart_LeftTri || SlideStart_RightTri) && Slide_Bar_Start >= 0.8f) {
+                        //Slide_BotTriangle = false;
+                        SlideStart_LeftTri = false;
+                        SlideStart_RightTri = false;
+                        SlideStart_VerticalBar = false;
+                        Queue_BottomLeftTri = true;
+                        Queue_BottomRightTri = true;
+                    }
+                    if (bar.IsCastBar && !bar.IsShortCast) {
+                        Queue_VerticalBar = false;
+                        Queue_TopTriangle = false;
+                        Queue_BottomLeftTri = false;
+                        Queue_BottomRightTri = false;
+                        SlideEnd_RightTri = false;
+                        SlideEnd_VerticalBar = false;
+                        SlideStart_VerticalBar = true;
+                        //Slide_BotTriangle = true;
+                        SlideStart_VerticalBar = true;
+                    }
+                    if (bar.IsCastBar && !bar.IsShortCast && conf.ShowSlidecastTriangles) {
+                        SlideStart_LeftTri = true;
+                        SlideStart_RightTri = true;
+                    }
+            }
+
+                if (!isRunning || bar.CurrentPos <= 0.02f) {
+                    Queue_VerticalBar = conf.BarQueueLockWhenIdle;
+                    Queue_TopTriangle = false;
+                    Queue_BottomLeftTri = false;
+                    Queue_BottomRightTri = false;
+                    SlideStart_VerticalBar = false;
+                    SlideEnd_VerticalBar = false;
+                    //Slide_BotTriangle = false;
+                    SlideStart_LeftTri = false;
+                    SlideStart_RightTri = false;
+                    SlideEnd_RightTri = false;
+                    Slide_Background = false;
+                    Slide_Bar_Start = 0f;
+                    Slide_Bar_End = 0f;
+                    Progress_TopTri = false;
+                    Progress_Bot_Left = false;
+                    Progress_Bot_Right = false;
+                }
+            }
+        }
         private void DrawBarElements(PluginUI ui, bool isCastBar, bool isShortCast, float castBarCurrentPos, float gcdTime_slidecastStart, float gcdTotal_slidecastEnd) {
-            int barHeight = (int)(ui.w_size.Y * conf.BarHeightRatio);
-            int barWidth = (int)(ui.w_size.X * conf.BarWidthRatio);
-            int halfBarHeight = barHeight % 2 == 0 ? (barHeight / 2) : (barHeight / 2) + 1;
-            int halfBarWidth = barWidth % 2 == 0 ? (barWidth / 2) : (barWidth / 2) + 1;
-            int borderSize = (int)conf.BarBorderSize;
-            int halfBorderSize = borderSize % 2 == 0 ? (borderSize / 2) : (borderSize / 2) + 1;
+            
+            var bar = new BarInfo(
+                ui.w_size.X,
+                ui.w_cent.X,
+                conf.BarWidthRatio,
+                ui.w_size.Y,
+                ui.w_cent.Y,
+                conf.BarHeightRatio,
+                conf.BarBorderSize,
+                castBarCurrentPos,
+                gcdTime_slidecastStart, 
+                gcdTotal_slidecastEnd,
+                conf.triangleSize,
+                isCastBar, 
+                isShortCast
+            );
+            var go = BarDecisionSwitch.Instance;
+                go.Update(bar, conf, isRunning);
+
+            var sc_sv = new SlideCastStartVertices(bar, go);
+            var sc_ev = new SlideCastEndVertices(bar, go);
+
+            var ql_v = new QueueLockVertices(bar, conf.SlideCastEnabled, conf.QueueLockEnabled);
+
             float barGCDClipTime = 0;
-            Vector2 start = new(
-                (int)(ui.w_cent.X - (barWidth / 2)), 
-                (int)(ui.w_cent.Y - (barHeight / 2))
-            );
-            Vector2 end = new(
-                (int)(ui.w_cent.X + halfBarWidth), 
-                (int)(ui.w_cent.Y + halfBarHeight)
-            );
-            Vector2 gcdBarEnd = new(
-                (int)(ui.w_cent.X + (castBarCurrentPos * barWidth) - halfBarWidth),
-                (int)(ui.w_cent.Y + halfBarHeight)
-            );
             
             // in both modes:
             // draw the background
@@ -413,97 +792,19 @@ namespace GCDTracker {
                 bgCache = BackgroundColor();
             if (isCastBar && castBarCurrentPos < 0.25f)
                 bgCache = BackgroundColor();
-            ui.DrawRectFilledNoAA(start, end, bgCache);
+            ui.DrawRectFilledNoAA(bar.StartVertex, bar.EndVertex, bgCache);
 
             // in both modes:
             // draw cast/gcd progress (main) bar
-            ui.DrawRectFilledNoAA(start, gcdBarEnd, conf.frontCol);
+            if(bar.CurrentPos > 0.001f)
+                ui.DrawRectFilledNoAA(bar.StartVertex, bar.ProgressVertex, conf.frontCol);
             
             // in Castbar mode:
             // draw the slidecast bar
-            if (conf.SlideCastEnabled && (isCastBar || (!isCastBar && isShortCast && 
-                (gcdTime_slidecastStart < gcdTotal_slidecastEnd)))) {
-                float slidecastStart = gcdTime_slidecastStart;
-                float slidecastEnd = gcdTotal_slidecastEnd;
-                if (slidecastStart <= castBarCurrentPos)
-                    slidecastStart = castBarCurrentPos;
-                if (!isCastBar && isShortCast) {
-                    slidecastStart = castBarCurrentPos;
+
+            if (conf.SlideCastEnabled){
+                DrawSlideCast(ui, sc_sv, sc_ev, go);
                 }
-
-
-                //ui.DrawBar(slidecastStartBuffer, slidecastEndBuffer, barWidth, barHeight, conf.slideCol);
-                //ui.DrawBar(slidecastStartBuffer, slidecastStartBuffer + ((float)borderSize / barWidth), barWidth, barHeight, conf.BarBackColBorder);
-                
-                Vector2 slidecastStartVector_TopRight = new(
-                    (int)(ui.w_cent.X + ((slidecastStart + ((float)(borderSize >= 1 ? borderSize : 1) / barWidth)) * barWidth) - halfBarWidth),
-                    (int)(ui.w_cent.Y - ((barHeight) / 2))
-                    );
-                Vector2 slidecastStartVector_BottomLeft = new(
-                    (int)(ui.w_cent.X + (slidecastStart * barWidth) - halfBarWidth),
-                    (int)(ui.w_cent.Y + halfBarHeight)
-                    );
-                Vector2 slidecastStartVector_BottomRight = new(
-                    (int)(ui.w_cent.X + ((slidecastStart + ((float)(borderSize >= 1 ? borderSize : 1) / barWidth)) * barWidth) - halfBarWidth),
-                    (int)(ui.w_cent.Y + halfBarHeight)
-                    );
-
-                Vector2 slidecastEndVector_TopLeft = new(
-                    (int)(ui.w_cent.X + (slidecastEnd * barWidth) - halfBarWidth),
-                    (int)(ui.w_cent.Y - (barHeight / 2))
-                    );
-                Vector2 slidecastEndVector_BottomLeft = new(
-                    (int)(ui.w_cent.X + (slidecastEnd * barWidth) - halfBarWidth),
-                    (int)(ui.w_cent.Y + halfBarHeight)
-                    );
-                Vector2 slidecastEndVector_BottomRight = new(
-                    (int)(ui.w_cent.X + ((slidecastEnd + ((float)(borderSize >= 1 ? borderSize : 1) / barWidth)) * barWidth) - halfBarWidth),
-                    (int)(ui.w_cent.Y + halfBarHeight)
-                    );
-
-                float rightClamp = slidecastStartVector_BottomRight.X + (conf.triangleSize + 1);
-                if (rightClamp >= end.X)
-                    rightClamp = end.X;
-
-                Vector2 topRight_LeftVertex = new Vector2(slidecastStartVector_TopRight.X, slidecastStartVector_TopRight.Y);
-
-                Vector2 bottomLeft_LeftVertex = new Vector2(slidecastStartVector_BottomLeft.X - conf.triangleSize, slidecastStartVector_BottomLeft.Y );
-                Vector2 bottomLeft_RightVertex = new Vector2(slidecastStartVector_BottomLeft.X, slidecastStartVector_BottomLeft.Y);
-                Vector2 bottomLeft_TopVertex = new Vector2(slidecastStartVector_BottomLeft.X, slidecastStartVector_BottomLeft.Y - conf.triangleSize);
-                Vector2 bottomRight_LeftVertex = new Vector2(slidecastStartVector_BottomRight.X, slidecastStartVector_BottomRight.Y);
-                Vector2 bottomRight_RightVertex = new Vector2(rightClamp, slidecastStartVector_BottomRight.Y);
-                Vector2 bottomRight_TopVertex = new Vector2(slidecastStartVector_BottomRight.X, slidecastStartVector_BottomRight.Y - (conf.triangleSize + 1));
-
-                Vector2 endTopLeft_RightVertex = new Vector2(slidecastEndVector_TopLeft.X, slidecastEndVector_TopLeft.Y);
-
-                Vector2 endBottomRight_LeftVertex = new Vector2(slidecastEndVector_BottomRight.X, slidecastEndVector_BottomRight.Y);
-                Vector2 endBottomRight_RightVertex = new Vector2(slidecastEndVector_BottomRight.X + conf.triangleSize + 1, slidecastEndVector_BottomRight.Y);
-                Vector2 endBottomRight_TopVertex = new Vector2(slidecastEndVector_BottomRight.X, slidecastEndVector_BottomRight.Y - (conf.triangleSize + 1));
-
-                if (!(!isCastBar && isShortCast && (gcdTime_slidecastStart < gcdTotal_slidecastEnd))) {
-                    // draw slidecast bar
-                    ui.DrawRectFilledNoAA(topRight_LeftVertex, slidecastEndVector_BottomLeft, conf.slideCol);
-                }
-                // draw sidecast vertical line
-                ui.DrawRectFilledNoAA(topRight_LeftVertex, bottomLeft_RightVertex, conf.BarBackColBorder);
-
-                if(conf.ShowSlidecastTriangles && (isShortCast || (isCastBar && conf.ShowTrianglesOnHardCasts))){  
-                        //bottom left
-                        ui.DrawRightTriangle(bottomLeft_LeftVertex, bottomLeft_RightVertex, bottomLeft_TopVertex, conf.BarBackColBorder);
-
-                        if(conf.SlideCastFullBar || (isCastBar && !isShortCast) || (!isCastBar && isShortCast && !conf.SlideCastFullBar)) {
-                            //bottom right
-                            ui.DrawRightTriangle(bottomRight_LeftVertex, bottomRight_RightVertex, bottomRight_TopVertex, conf.BarBackColBorder);
-                        }
-                        if(!conf.SlideCastFullBar && isShortCast) {
-                            //end right
-                            ui.DrawRectFilledNoAA(endTopLeft_RightVertex, endBottomRight_LeftVertex, conf.BarBackColBorder);
-                            ui.DrawRightTriangle(endBottomRight_LeftVertex, endBottomRight_RightVertex, endBottomRight_TopVertex, conf.BarBackColBorder);
-                        }
-                    
-
-                }
-            }
 
             // in GCDBar mode:
             // draw oGCDs and clips
@@ -524,125 +825,97 @@ namespace GCDTracker {
                         if (!isHardCast) {
                             // create end vertex
                             Vector2 clipEndVector = new(
-                                (int)(ui.w_cent.X + ((barGCDClipTime / gcdTotal) * barWidth) - halfBarWidth),
-                                (int)(ui.w_cent.Y + halfBarHeight)
+                                (int)(bar.CenterX + ((barGCDClipTime / gcdTotal) * bar.Width) - bar.HalfWidth),
+                                (int)(bar.CenterY + bar.HalfHeight)
                             );
                             // Draw the clipped part at the beginning
-                            ui.DrawRectFilledNoAA(start, clipEndVector, conf.clipCol);
+                            ui.DrawRectFilledNoAA(bar.StartVertex, clipEndVector, conf.clipCol);
                             //ui.DrawBar(0, barGCDClipTime / gcdTotal, barWidth, barHeight, conf.clipCol);
                         }
                     }
 
                     Vector2 oGCDStartVector = new(
-                        (int)(ui.w_cent.X + ((ogcdStart / gcdTotal) * barWidth) - (barWidth / 2)),
-                        (int)(ui.w_cent.Y - (barHeight / 2))
+                        (int)(bar.CenterX + ((ogcdStart / gcdTotal) * bar.Width) - bar.RawHalfWidth),
+                        (int)(bar.CenterY - bar.RawHalfHeight)
                     );
                     Vector2 oGCDEndVector = new(
-                        (int)(ui.w_cent.X + ((ogcdEnd / gcdTotal) * barWidth) - halfBarWidth),
-                        (int)(ui.w_cent.Y + ((barHeight) / 2))
+                        (int)(bar.CenterX + ((ogcdEnd / gcdTotal) * bar.Width) - bar.HalfWidth),
+                        (int)(bar.CenterY + bar.RawHalfHeight)
                     );
 
                     ui.DrawRectFilledNoAA(oGCDStartVector, oGCDEndVector, isClipping ? conf.clipCol : conf.anLockCol);
                     //ui.DrawBar(ogcdStart / gcdTotal, ogcdEnd / gcdTotal, barWidth, barHeight, isClipping ? conf.clipCol : conf.anLockCol);
                     if (!iscast && (!isClipping || ogcdStart > 0.01f)) {
                         Vector2 clipPos = new(
-                            ui.w_cent.X + (ogcdStart / gcdTotal * barWidth) - (barWidth / 2),
-                            ui.w_cent.Y - (barHeight / 2) + 1f
+                            bar.CenterX + (ogcdStart / gcdTotal * bar.Width) - bar.RawHalfWidth,
+                            bar.CenterY - bar.RawHalfHeight + 1f
                         );
                         ui.DrawRectFilled(clipPos,
-                            clipPos + new Vector2(2f * ui.Scale, barHeight - 2f),
+                            clipPos + new Vector2(2f * ui.Scale, bar.Height - 2f),
                             conf.ogcdCol);
                     }
                 }
             }
-/*
-            ui.DrawDebugText((conf.BarWidthRatio + 1) / 2.1f, -2f, conf.ClipTextSize, conf.ClipTextColor, conf.ClipBackColor, barWidth.ToString() 
-                + " " + barHeight.ToString() + " " + start.X.ToString() + " " + end.X.ToString() + " " + start.Y.ToString() + " " + end.Y.ToString() + " " + 
-                (end.X - start.X).ToString() + " " + (end.Y - start.Y).ToString());
-*/
 
+           // ui.DrawDebugText((conf.BarWidthRatio + 1) / 2.1f, -2f, conf.ClipTextSize, conf.ClipTextColor, conf.ClipBackColor, 
+           //     bar.CurrentPos.ToString() + " " + go.Slide_Bar_End.ToString()
+           //     + " " + go.Slide_Background.ToString() + " " + (0.81f - bar.GCDTotal_SlidecastEnd).ToString());
+            
+            
             //in both modes:
             //draw the queuelock (if enabled)
-            if (conf.QueueLockEnabled && !(!isShortCast && isCastBar)) {
-
-                float queuelockStartBuffer = 0.8f;
-                if (castBarCurrentPos >= 0.8f)
-                    queuelockStartBuffer = castBarCurrentPos;
-                    if (castBarCurrentPos >= 1f - ((float)borderSize / barWidth))
-                        queuelockStartBuffer = 1f -((float)borderSize / barWidth);
-
-                //ui.DrawBar(queuelockStartBuffer, queuelockStartBuffer + ((float)borderSize / barWidth), barWidth, barHeight, conf.BarBackColBorder);
-                Vector2 queuelockStartVector_TopLeft = new(
-                    (int)(ui.w_cent.X + (queuelockStartBuffer * barWidth) - halfBarWidth),
-                    (int)(ui.w_cent.Y - (barHeight / 2))
-                    );
-                Vector2 queuelockStartVector_TopRight = new(
-                    (int)(ui.w_cent.X + ((queuelockStartBuffer + ((float)(borderSize >= 1 ? borderSize : 1)/ barWidth)) * barWidth) - halfBarWidth),
-                    (int)(ui.w_cent.Y - ((barHeight) / 2))
-                    );
-                Vector2 queuelockStartVector_BottomLeft = new(
-                    (int)(ui.w_cent.X + (queuelockStartBuffer * barWidth) - halfBarWidth),
-                    (int)(ui.w_cent.Y + halfBarHeight)
-                    );
-                Vector2 queuelockStartVector_BottomRight = new(
-                    (int)(ui.w_cent.X + ((queuelockStartBuffer + ((float)(borderSize >= 1 ? borderSize : 1) / barWidth)) * barWidth) - halfBarWidth),
-                    (int)(ui.w_cent.Y + halfBarHeight)
-                    );
-                
-                // clamp the right virtex of the right triangles to the end of the bar
-                // to prevent it from hanging over the edge when bar is full
-
-                // for the love of me, i have no idea why conf.triangleSize +1 is necessary.
-                // stuff of nightmares -- really.
-                float rightClamp = queuelockStartVector_TopRight.X + (conf.triangleSize + 1);
-                if (rightClamp >= end.X)
-                    rightClamp = end.X;
-
-                // create vertices for the top (queuelock) triangles
-                Vector2 topLeft_LeftVertex = new Vector2(queuelockStartVector_TopLeft.X - conf.triangleSize, queuelockStartVector_TopLeft.Y);
-                Vector2 topLeft_RightVertex = new Vector2(queuelockStartVector_TopLeft.X, queuelockStartVector_TopLeft.Y);
-                Vector2 topLeft_BottomVertex = new Vector2(queuelockStartVector_TopLeft.X, queuelockStartVector_TopLeft.Y + conf.triangleSize);
-                Vector2 topRight_LeftVertex = new Vector2(queuelockStartVector_TopRight.X, queuelockStartVector_TopRight.Y);
-                Vector2 topRight_RightVertex = new Vector2(rightClamp, queuelockStartVector_TopRight.Y);
-                Vector2 topRight_BottomVertex = new Vector2(queuelockStartVector_TopRight.X, queuelockStartVector_TopRight.Y + (conf.triangleSize + 1));
-                // create vertices for the bottom (slidelock) triangles
-                Vector2 bottomLeft_LeftVertex = new Vector2(queuelockStartVector_BottomLeft.X - conf.triangleSize, queuelockStartVector_BottomLeft.Y);
-                Vector2 bottomLeft_RightVertex = new Vector2(queuelockStartVector_BottomLeft.X, queuelockStartVector_BottomLeft.Y);
-                Vector2 bottomLeft_TopVertex = new Vector2(queuelockStartVector_BottomLeft.X, queuelockStartVector_BottomLeft.Y - conf.triangleSize);
-                Vector2 bottomRight_LeftVertex = new Vector2(queuelockStartVector_BottomRight.X, queuelockStartVector_BottomRight.Y);
-                Vector2 bottomRight_RightVertex = new Vector2(rightClamp, queuelockStartVector_BottomRight.Y);
-                Vector2 bottomRight_TopVertex = new Vector2(queuelockStartVector_BottomRight.X, queuelockStartVector_BottomRight.Y - (conf.triangleSize + 1));
-                
-                // in both modes:
-                // draw top (queuelock) triangles and the vertical border line
-                if (conf.ShowQueuelockTriangles){
-                    //top left
-                    ui.DrawRightTriangle(topLeft_LeftVertex, topLeft_RightVertex, topLeft_BottomVertex, conf.BarBackColBorder);
-                    //top right
-                    ui.DrawRightTriangle(topRight_LeftVertex, topRight_RightVertex, topRight_BottomVertex, conf.BarBackColBorder);
-                
-                    // in GCDBar mode:
-                    // draw the bottom triangles too
-                    if(!isCastBar && isShortCast && conf.SlideCastFullBar) {
-                        //bottom left
-                        ui.DrawRightTriangle(bottomLeft_LeftVertex, bottomLeft_RightVertex, bottomLeft_TopVertex, conf.BarBackColBorder);
-                        //bottom right
-                        ui.DrawRightTriangle(bottomRight_LeftVertex, bottomRight_RightVertex, bottomRight_TopVertex, conf.BarBackColBorder);
-                    }
-                }
-                //vertical bar
-                ui.DrawRectFilledNoAA(topLeft_RightVertex, bottomRight_LeftVertex, conf.BarBackColBorder); 
-
-            }
+            DrawQueueLock(ui, ql_v, go);
 
             // in both modes:
             // draw borders
-            if (borderSize > 0) {
+            if (bar.BorderSize > 0) {
                 ui.DrawRect(
-                    start - new Vector2(halfBorderSize, halfBorderSize),
-                    end + new Vector2(halfBorderSize, halfBorderSize),
-                    conf.BarBackColBorder, borderSize);
+                    bar.StartVertex - new Vector2(bar.HalfBorderSize, bar.HalfBorderSize),
+                    bar.EndVertex + new Vector2(bar.HalfBorderSize, bar.HalfBorderSize),
+                    conf.BarBackColBorder, bar.BorderSize);
             }
+        }
+
+        private void DrawSlideCast(PluginUI ui, SlideCastStartVertices sc_sv, SlideCastEndVertices sc_ev, BarDecisionSwitch go){
+            // draw slidecast bar
+            if (go.Slide_Background)
+                ui.DrawRectFilledNoAA(sc_sv.TL_C, sc_ev.BR_C, conf.slideCol);
+            
+            // draw sidecast (start) vertical line
+            if (go.SlideStart_VerticalBar)
+                ui.DrawRectFilledNoAA(sc_sv.TL_C, sc_sv.BR_C, conf.BarBackColBorder);
+
+            //draw sidlecast (end) vertical line
+            if (go.SlideEnd_VerticalBar)
+                ui.DrawRectFilledNoAA(sc_ev.TL_C, sc_ev.BR_C, conf.BarBackColBorder);
+
+            //bottom left
+            if (go.SlideStart_LeftTri)
+                ui.DrawRightTriangle(sc_sv.BL_C, sc_sv.BL_X, sc_sv.BL_Y, conf.BarBackColBorder);
+
+            //bottom right
+            if (go.SlideStart_RightTri)
+                ui.DrawRightTriangle(sc_sv.BR_C, sc_sv.BR_X, sc_sv.BR_Y, conf.BarBackColBorder);
+            
+            //end right
+            if (go.SlideEnd_RightTri)
+                ui.DrawRightTriangle(sc_ev.BR_C, sc_ev.BR_X, sc_ev.BR_Y, conf.BarBackColBorder);
+        }
+
+        private void DrawQueueLock(PluginUI ui, QueueLockVertices ql_v, BarDecisionSwitch go) {
+            //top triangle
+            if (go.Queue_TopTriangle) {
+                ui.DrawRightTriangle(ql_v.TL_C, ql_v.TL_X, ql_v.TL_Y, conf.BarBackColBorder);
+                ui.DrawRightTriangle(ql_v.TR_C, ql_v.TR_X, ql_v.TR_Y, conf.BarBackColBorder);
+            }
+            //bottom left triangle
+            if(go.Queue_BottomLeftTri)
+                ui.DrawRightTriangle(ql_v.BL_C, ql_v.BL_X, ql_v.BL_Y, conf.BarBackColBorder);
+            //bottom right triangle
+            if (go.Queue_BottomRightTri)
+                ui.DrawRightTriangle(ql_v.BR_C, ql_v.BR_X, ql_v.BR_Y, conf.BarBackColBorder); 
+            if (go.Queue_VerticalBar)
+            ui.DrawRectFilledNoAA(ql_v.TL_C, ql_v.BR_C, conf.BarBackColBorder); 
         }
 
         private bool CheckClip(bool iscast, float ogcd, float anlock, float gcdTotal, float gcdTime) =>

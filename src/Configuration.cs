@@ -56,12 +56,14 @@ namespace GCDTracker
         //GCDBar
         public bool BarEnabled = false;
         [JsonIgnore]
+        public bool BarQueueLockWhenIdle = true;
         public bool BarWindowMoveable = false;
         public bool BarRollGCDs = true;
         public float BarBorderSize = 2f;
         public float BarWidthRatio = 0.9f;
         public float BarHeightRatio = 0.5f;
         public Vector4 BarBackColBorder = new(0f, 0f, 0f, 1f);
+
 
         //CastBar
         public bool CastBarEnabled = true;
@@ -382,6 +384,8 @@ namespace GCDTracker
                             ImGui.Text("If enabled abilities that start on the next GCD will always be shown inside the bar, even if it overlaps the current GCD.");
                             ImGui.EndTooltip();
                         }
+                        if (QueueLockEnabled)
+                        ImGui.Checkbox("Show Queue Lock When Bar Idle", ref BarQueueLockWhenIdle);
                         ImGui.SliderFloat("Border size", ref BarBorderSize, 0f, 10f);
                         Vector2 size = new(BarWidthRatio, BarHeightRatio);
                         ImGui.SliderFloat2("Width and height ratio", ref size, 0.1f, 1f);
