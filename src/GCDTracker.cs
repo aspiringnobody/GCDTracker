@@ -30,6 +30,9 @@ namespace GCDTracker {
         private IClientState ClientState { get; init; }
 
         [PluginService]
+        private IObjectTable ObjectTable { get; init; }
+
+        [PluginService]
         private IDataManager Data { get; init; }
 
         [PluginService]
