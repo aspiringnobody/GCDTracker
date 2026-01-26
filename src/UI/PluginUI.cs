@@ -23,7 +23,7 @@ namespace GCDTracker.UI {
         public void Draw() {
             conf.DrawConfig(bar);
 
-            if (DataStore.ClientState.LocalPlayer == null)
+            if (DataStore.ObjectTable.LocalPlayer == null)
                 return;
         
             bool inCombat = DataStore.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.InCombat];
