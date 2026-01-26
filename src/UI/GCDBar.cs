@@ -42,7 +42,7 @@ namespace GCDTracker.UI {
         public void Update(IFramework _) {
             go.Update(helper,
                 DataStore.ActionManager->CastActionType,
-                DataStore.ClientState?.LocalPlayer?.TargetObject?.ObjectKind ?? ObjectKind.None);
+                DataStore.ObjectTable?.LocalPlayer?.TargetObject?.ObjectKind ?? ObjectKind.None);
             SlideCast.Update(bar_v);
             QueueLock.Update(bar_v);
         }
@@ -205,7 +205,7 @@ namespace GCDTracker.UI {
 
         public bool ShouldDraw(bool inCombat, bool noUI) {
             bool shouldShowBar = conf.BarEnabled && !noUI;
-            conf.EnabledGBJobs.TryGetValue(DataStore.ClientState.LocalPlayer.ClassJob.RowId, out var enabledJobGB);
+            conf.EnabledGBJobs.TryGetValue(DataStore.ObjectTable.LocalPlayer.ClassJob.RowId, out var enabledJobGB);
             bool showBarInCombat = enabledJobGB && (conf.ShowOutOfCombat || inCombat);
             bool showBarWhenGCDNotRunning = !conf.ShowOnlyGCDRunning ||
                                             (helper.idleTimerAccum < helper.GCDTimeoutBuffer);
