@@ -37,7 +37,7 @@ namespace GCDTracker.UI {
         }
 
         public bool ShouldDraw(bool inCombat, bool noUI) {
-            conf.EnabledGWJobs.TryGetValue(DataStore.ClientState.LocalPlayer.ClassJob.RowId, out var enabledJobGW);
+            conf.EnabledGWJobs.TryGetValue(DataStore.ObjectTable.LocalPlayer.ClassJob.RowId, out var enabledJobGW);
 
             bool shouldShowGCDWheel = conf.WheelEnabled && !noUI;
             bool showGCDWheelInCombat = enabledJobGW && (conf.ShowOutOfCombat || inCombat);
