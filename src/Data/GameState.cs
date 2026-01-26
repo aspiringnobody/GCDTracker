@@ -6,10 +6,10 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 namespace GCDTracker.Data
 {
     public unsafe static class GameState {
-        public static bool IsCasting() => DataStore.ClientState?.LocalPlayer?.CurrentCastTime > 0;
+        public static bool IsCasting() => DataStore.ObjectTable?.LocalPlayer?.CurrentCastTime > 0;
         
         public static bool CastingNonAbility() {
-            var objectKind = DataStore.ClientState?.LocalPlayer?.TargetObject?.ObjectKind;
+            var objectKind = DataStore.ObjectTable?.LocalPlayer?.TargetObject?.ObjectKind;
 
             return objectKind switch {
                 ObjectKind.Aetheryte => true,
