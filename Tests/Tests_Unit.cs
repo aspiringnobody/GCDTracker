@@ -1,6 +1,7 @@
 using GCDTracker.Data;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using System.Runtime.InteropServices;
 using System.Text;
 using Tests.Mocks;
 
@@ -13,7 +14,7 @@ public class Tests_Unit {
         byte[] buffer = "Blizzard III"u8.ToArray();
         fixed (byte* ptr = buffer) {
             byte* ptr2 = ptr;
-            string result = HelperMethods.ReadStringFromPointer(&ptr2);
+            string result = HelperMethods.ReadStringFromPointer((InteropGenerator.Runtime.CStringPointer*)&ptr2);
             Assert.AreEqual("Blizzard III", result);
         }
     }
@@ -21,7 +22,7 @@ public class Tests_Unit {
     [TestMethod]
     public unsafe void TestReadStringFromPointer_WithNullPointer_ReturnsEmptyString() {
         byte* ptr = null;
-        string result = HelperMethods.ReadStringFromPointer(&ptr);
+        string result = HelperMethods.ReadStringFromPointer((InteropGenerator.Runtime.CStringPointer*)&ptr);
         Assert.AreEqual("", result);
     }
 
@@ -30,7 +31,7 @@ public class Tests_Unit {
         byte[] buffer = "Blizzard III\0"u8.ToArray();
         fixed (byte* ptr = buffer) {
             byte* ptr2 = ptr;
-            string result = HelperMethods.ReadStringFromPointer(&ptr2);
+            string result = HelperMethods.ReadStringFromPointer((InteropGenerator.Runtime.CStringPointer*)&ptr2);
             Assert.AreEqual("Blizzard III", result);
         }
     }
@@ -40,7 +41,7 @@ public class Tests_Unit {
         byte[] buffer = "ブリザガ"u8.ToArray();
         fixed (byte* ptr = buffer) {
             byte* ptr2 = ptr;
-            string result = HelperMethods.ReadStringFromPointer(&ptr2);
+            string result = HelperMethods.ReadStringFromPointer((InteropGenerator.Runtime.CStringPointer*)&ptr2);
             Assert.AreEqual("ブリザガ", result);
         }
     }
@@ -52,7 +53,7 @@ public class Tests_Unit {
         fixed (byte* ptr = buffer)
         {
             byte* ptr2 = ptr;
-            string result = HelperMethods.ReadStringFromPointer(&ptr2);
+            string result = HelperMethods.ReadStringFromPointer((InteropGenerator.Runtime.CStringPointer*)&ptr2);
             Assert.AreEqual("%\u0003&\u0003Vesper Bay Aetheryte Ticket", result);
         }
     }
