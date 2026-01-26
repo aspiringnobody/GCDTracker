@@ -59,7 +59,8 @@ namespace GCDTracker.Data {
         public static string ReadStringFromPointer(InteropGenerator.Runtime.CStringPointer* ptr) {
             if (ptr == null) return "";
             return ptr->ToString();
-
+        }
+        
         public static string GetAbilityName(uint actionID, ActionType actionType) {
             var lumina = DataStore.Lumina;
             if (lumina == null) return "Unknown";
