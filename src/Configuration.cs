@@ -3,7 +3,7 @@ using Dalamud.Interface;
 using Dalamud.Plugin;
 using GCDTracker.Data;
 using GCDTracker.UI;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
