@@ -86,8 +86,8 @@ namespace GCDTracker {
             }
             //check to make sure that the player is targeting something, so that if they are spamming an action
             //button after the mob dies it won't update the targetBuffer and trigger an ABC
-            if (DataStore.ClientState.LocalPlayer?.TargetObject != null)
-                targetBuffer = DataStore.ClientState.LocalPlayer.TargetObjectId;
+            if (DataStore.ObjectTable.LocalPlayer?.TargetObject != null)
+                targetBuffer = DataStore.ObjectTable.LocalPlayer.TargetObjectId;
 
             if (addingToQueue) {
                 AddToQueue(act, isWeaponSkill);
@@ -140,7 +140,7 @@ namespace GCDTracker {
         }
 
         public void Update(IFramework framework) {
-            if (DataStore.ClientState.LocalPlayer == null)
+            if (DataStore.ObjectTable.LocalPlayer == null)
                 return;
             CleanFailedOGCDs();
             GCDTimeoutHelper(framework);
@@ -239,7 +239,7 @@ namespace GCDTracker {
         public bool ShouldStartABC() {
             abcBlocker = true;
             // compare cached target object ID at the time of action use to the current target object ID
-            return DataStore.ClientState?.LocalPlayer?.TargetObjectId == targetBuffer;
+            return DataStore.ObjectTable?.LocalPlayer?.TargetObjectId == targetBuffer;
         }
 
         public void MiscEventChecker(){
