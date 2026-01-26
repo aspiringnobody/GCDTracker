@@ -64,7 +64,7 @@ namespace GCDTracker {
             config.Initialize(PluginInterface);
             config.Migrate();
 
-            DataStore.Init(Data, ClientState, Condition);
+            DataStore.Init(Data, ClientState, ObjectTable, Condition);
             ComboStore.Init(config);
 
             ui = new PluginUI(config);
