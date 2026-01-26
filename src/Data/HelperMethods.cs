@@ -5,6 +5,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Common.Math;
 using System.Globalization;
+using InteropGenerator.Runtime;
 using System.Runtime.CompilerServices;
 using static FFXIVClientStructs.FFXIV.Client.Game.Character.ActionEffectHandler;
 using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
@@ -55,23 +56,22 @@ namespace GCDTracker.Data {
 
         public static uint? GetParentJob(uint jobId) => DataStore.ClassSheet.GetRowOrDefault(jobId)?.ClassJobParent.ValueNullable?.RowId;
 
-        public static string ReadStringFromPointer(byte** ptr) {
-            if (ptr == null || *ptr == null) return "";
-            return MemoryHelper.ReadSeStringNullTerminated(new nint(*ptr)).TextValue;
-        }
+        public static string ReadStringFromPointer(InteropGenerator.Runtime.CStringPointer* ptr) {
+            if (ptr == null) return "";
+            return ptr->ToString();
 
         public static string GetAbilityName(uint actionID, ActionType actionType) {
             var lumina = DataStore.Lumina;
             if (lumina == null) return "Unknown";
-
-            var objectKind = DataStore.ClientState?.LocalPlayer?.TargetObject?.ObjectKind ?? ObjectKind.None;
+            
+            var objectKind = DataStore.ObjectTable?.LocalPlayer?.TargetObject?.ObjectKind ?? ObjectKind.None;
 
             return objectKind switch {
                 ObjectKind.Aetheryte => "Attuning...",
                 ObjectKind.EventObj or ObjectKind.EventNpc => "Interacting...",
                 _ when actionID == 1 && actionType != ActionType.Mount => "Interacting...",
                 _ => actionType switch {
-                    ActionType.Ability
+                    ActionType.EventAction
                     or ActionType.Action
                     or ActionType.BgcArmyAction
                     or ActionType.CraftAction
@@ -85,7 +85,7 @@ namespace GCDTracker.Data {
                         : "Unknown Companion",
 
                     ActionType.Item
-                    or ActionType.KeyItem =>
+                    or ActionType.EventItem =>
                         lumina?.GetExcelSheet<Lumina.Excel.Sheets.Item>()?.GetRowOrDefault(actionID)?.Name.ExtractText() ?? "Unknown Item",
 
                     ActionType.Mount =>
