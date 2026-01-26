@@ -1,7 +1,7 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Animation;
 using GCDTracker.Data;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
