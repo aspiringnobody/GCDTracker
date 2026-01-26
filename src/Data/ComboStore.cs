@@ -24,7 +24,7 @@ namespace GCDTracker.Data {
         }
 
         public static Dictionary<uint, List<uint>> GetCombos() {
-            var par = (DataStore.ClientState.LocalPlayer.ClassJob.RowId, DataStore.ClientState.LocalPlayer.Level, false, conf.EnabledCTJobs);
+            var par = (DataStore.ObjectTable.LocalPlayer.ClassJob.RowId, DataStore.ObjectTable.LocalPlayer.Level, false, conf.EnabledCTJobs);
             par.EnabledCTJobs.TryGetValue(par.RowId, out bool enabled);
             if (!enabled) return [];
             if (comboCache.TryGetValue(par, out var comboDict))
