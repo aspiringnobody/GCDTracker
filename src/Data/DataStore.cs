@@ -15,13 +15,14 @@ namespace GCDTracker.Data {
         public static ActionManager* ActionManager;
         public static AtkStage* AtkStage;
         public static IClientState ClientState;
+        public static IObjectTable ObjectTable;
         public static ICondition Condition;
         public static ExcelSheet<Lumina.Excel.Sheets.Action> ActionSheet;
         public static ExcelSheet<Lumina.Excel.Sheets.ClassJob> ClassSheet;
 
         public static Dictionary<int, bool> ComboPreserving;
 
-        public static void Init(IDataManager data, IClientState cs, ICondition cond) {
+        public static void Init(IDataManager data, IClientState cs, IObjectTable ot, ICondition cond) {
             Lumina = data;
             ActionSheet = data.Excel.GetSheet<Lumina.Excel.Sheets.Action>();
             ClassSheet = data.Excel.GetSheet<Lumina.Excel.Sheets.ClassJob>();
@@ -33,6 +34,7 @@ namespace GCDTracker.Data {
             Combo = ActionManager->Combo;
             Action = (Action*)ActionManager;
             ClientState = cs;
+            ObjectTable = ot; 
             Condition = cond;
         }
         /*
