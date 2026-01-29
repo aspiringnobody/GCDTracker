@@ -630,7 +630,7 @@ namespace GCDTracker
                             ImGui.EndTooltip();
                         }
 
-                        if (ImGui.TreeNodeEx("Preview Features", ImGuiTreeNodeFlags.DefaultOpen)) {
+                        if (ImGui.TreeNodeEx("Preview Features", ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.NoTreePushOnOpen)) {
                             ImGui.TextDisabled("Pulse and Floating Triangles are currently in development.");
                             ImGui.TextColored(new Vector4(0.9f,0.175f,0.175f,1f), "Please note that these settings will reset once they leave preview.");
                             ImGui.NewLine();
